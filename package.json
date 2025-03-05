@@ -1,0 +1,32 @@
+{
+  "name": "makeit",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/nikkorinyuki/makeit#readme",
+  "bugs": {
+    "url": "https://github.com/nikkorinyuki/makeit/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nikkorinyuki/makeit.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "main": "dist/app.js",
+  "scripts": {
+    "start": "tsc && node dist/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "ts-node": "^10.9.2",
+    "tslint": "^5.12.1",
+    "typescript": "^3.3.3"
+  },
+  "dependencies": {
+    "fastify": "^5.2.1"
+  },
+  "engines": {
+    "node": "16.x"
+  }
+}
