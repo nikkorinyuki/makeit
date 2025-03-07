@@ -1,0 +1,302 @@
+import parse from "discord-markdown-parser";
+import split from "graphemesplit";
+import { Font } from "opentype.js";
+import fs from "fs";
+const emojiData: emoji[] = require('emoji-datasource-twitter');
+
+interface emoji {
+    "name": string,
+    "unified": string,
+    "non_qualified"?: string,
+    "docomo"?: string,
+    "au"?: string,
+    "softbank"?: string,
+    "google"?: string,
+    "image": string,
+    "sheet_x": number,
+    "sheet_y": number,
+    "short_name": string,
+    "short_names": string[],
+    "text"?: string,
+    "texts"?: string,
+    "category": string,
+    "subcategory": string,
+    "sort_order": number,
+    "added_in": string,
+    "has_img_apple": boolean,
+    "has_img_google": boolean,
+    "has_img_twitter": boolean,
+    "has_img_facebook": boolean,
+    "skin_variations": {
+        "1F3FB": {
+            "unified": string,
+            "image": string,
+            "sheet_x": number,
+            "sheet_y": number,
+            "added_in": string,
+            "has_img_apple": boolean,
+            "has_img_google": boolean,
+            "has_img_twitter": boolean,
+            "has_img_facebook": boolean,
+        }
+    },
+    "obsoletes": "ABCD-1234",
+    "obsoleted_by": "5678-90EF"
+}
+export async function fill_chars_center(chars: { lines: char[][], fontSize: number }, x: number, y: number, width: number, height: number, debug: boolean = false) {
+    const svg: string[] = [];
+    const y1 = y;
+    console.log("最大の高さ:" + height);
+    console.log(chars)
+    /*const margin_bottom = (height - (str.split("\n").map(e => calc_text_height(ctx, e)).reduce(function (sum, element) {
+        return sum + element;
+    }, 0))) / (str.split("\n").length + 1);*/
+    console.log(margin_bottom);
+    const font = global.fonts["note_ja"];
+    const EnterScale = (chars.fontSize) / font.unitsPerEm;
+    const EnterCharHeight = (font.ascender - font.descender) * EnterScale;
+    //y += margin_bottom;
+    for (const line of chars.lines) {
+        //await fillTextWithTwemoji(ctx, line, x + (width - ctx.measureText(line).width) / 2, y + textHeight / 2);
+        const line_width = line.map(e => e.width).reduce(function (sum, element) {
+            return sum + element;
+        }, 0);
+        const line_x = x + (width - line_width) / 2;
+        const line_height = line.length != 0 ? Math.max(...line.map(e => e.height)) : EnterCharHeight;
+        let w = 0;
+        for (const char of line) {
+            let emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text));
+            if (!emoji) emoji = emojiData.find(e => e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase());
+            if (debug) console.log(char.text, getCharUnified(char.text))
+            if (emoji) {
+                const emoji_image = emoji.has_img_twitter ? `node_modules/emoji-datasource-twitter/img/twitter/64/${emoji.image}`
+                    : `node_modules/emoji-datasource-google/img/google/64/${emoji.image}`;
+                svg.push(`<image href="${"data:image/png;base64," + fs.readFileSync(emoji_image).toString('base64')}" height="${Math.min(char.height, height + y1)}" width="${char.width}" x="${line_x + w}" y="${y}" />`);
+            } else {
+                //if (char.fontRem == 0.8125) ctx.fillStyle = "color-mix( in oklab, hsl(228 calc(1 * 5.155%) 38.039% / 1) 100%, black 0% )"; else 
+                //ctx.font = `normal ${char.bold ? "700" : "500"} ${chars.fontSize * char.fontRem}px ${char.fontname}`;
+                const path = char.font.getPath(
+                    char.text,
+                    line_x + w,
+                    Math.min(y + line_height / 2, height + y1),
+                    chars.fontSize * char.fontRem);
+                path.fill = "#000";
+                svg.push(path.toSVG(2));
+            }
+            //if (debug) line_stroke(ctx, line_x + w, y, line_x + w, y + char.height);
+            w += char.width;
+        }
+        //if (debug) line_stroke(ctx, 0, y, canvasWidth, y);
+        //if (debug) line_stroke(ctx, line_x, y + (line_height / 2), line_x + line_width, y + (line_height / 2));
+        //if (debug) line_stroke(ctx, 0, y + line_height, canvasWidth, y + line_height);
+        y += line_height + margin_bottom;
+    }
+    return svg.join("");
+}
+
+interface char {
+    text: string,
+    font: Font;
+    fontname: (keyof typeof global.fonts);
+    width: number,
+    height: number,
+    fontRem: number,
+    bold?: boolean,
+    italic?: boolean,
+    underline?: boolean,
+    strikethrough?: boolean,
+    code?: boolean,
+    quote?: boolean,
+    spoiler?: boolean
+}
+interface char_option {
+    fonts?: (keyof typeof global.fonts)[],
+    fontRem?: number,
+    bold?: boolean,
+    italic?: boolean,
+    underline?: boolean,
+    strikethrough?: boolean,
+    code?: boolean,
+    quote?: boolean,
+    spoiler?: boolean
+}
+const h1: char_option = { "fontRem": 1.5, "bold": true };
+const h2: char_option = { "fontRem": 1.25, "bold": true };
+const h3: char_option = { "fontRem": 1, "bold": true };
+const subtext: char_option = { "fontRem": 0.8125, "fonts": ["note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"] };
+function markdown_to_chars(markdown_json: import("@khanacademy/simple-markdown").SingleASTNode[], option: char_option = {}): char[] {
+    markdown_json = mergeObjects(markdown_json);
+    const result = [];
+    option = Object.assign({ "fonts": ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false }, option);
+    for (let index = 0; index < markdown_json.length; index++) {
+        const markdown = markdown_json[index];
+        let _option: char_option = JSON.parse(JSON.stringify(option));
+        switch (markdown.type) {
+            case "text":
+                const content = markdown.content;
+                result.push(...split(content).map(e => { return { "text": e, ...get_best_font(e, _option.fonts), "width": 0, "height": 0, "fontRem": _option.fontRem }; }));
+                break;
+            case "heading":
+                if (markdown.level == 1) _option = Object.assign(_option, h1); else if (markdown.level == 2) _option = Object.assign(_option, h2); else if (markdown.level == 3) _option = Object.assign(_option, h3);
+                if (markdown_json[index + 1]) markdown.content.push({ "type": "br" });
+                result.push(...markdown_to_chars(markdown.content, _option));
+                break;
+            case "subtext":
+                _option = Object.assign(_option, subtext);
+                if (markdown_json[index + 1]) markdown.content.push({ "type": "br" });
+                result.push(...markdown_to_chars(markdown.content, _option));
+                break;
+            case "strong":
+                _option.bold = true;
+                result.push(...markdown_to_chars(markdown.content, _option));
+                break;
+            case "em":
+                _option.italic = true;
+                result.push(...markdown_to_chars(markdown.content, _option));
+                break;
+            case "underline":
+                _option.underline = true;
+                result.push(...markdown_to_chars(markdown.content, _option));
+                break;
+            case "strikethrough":
+                _option.strikethrough = true;
+                result.push(...markdown_to_chars(markdown.content, _option));
+                break;
+            case "inlineCode":
+            case "codeBlock":
+                _option.code = true;
+                result.push(...markdown_to_chars([{ "type": "text", "content": markdown.content }], _option));
+                break;
+            case "blockQuote":
+                _option.quote = true;
+                result.push(...markdown_to_chars(markdown.content, _option));
+                break;
+            case "spoiler":
+                _option.spoiler = true;
+                result.push(...markdown_to_chars(markdown.content, _option));
+                break;
+            case "br":
+                result.push(...markdown_to_chars([{ "type": "text", "content": "\n" }], _option));
+                break;
+            case "twemoji":
+                result.push(...markdown_to_chars([{ "type": "text", "content": markdown.name }], _option));
+                break;
+            case "emoji":
+                break;
+            case "everyone":
+            case "here":
+                result.push(...markdown_to_chars([{ "type": "text", "content": "@" + markdown.type }], _option));
+                break;
+            default:
+                console.log(markdown.type);
+                if (!markdown.content) break;
+                if (Array.isArray(markdown.content)) result.push(...markdown_to_chars(markdown.content, _option));
+                else result.push(...markdown_to_chars([markdown.content], _option));
+        }
+    }
+    return result;
+}
+
+function mergeObjects(object: import("@khanacademy/simple-markdown").SingleASTNode[]): import("@khanacademy/simple-markdown").SingleASTNode[] {
+    const mergedData = [];
+    for (const item of object) {
+        const last = mergedData[mergedData.length - 1];
+
+        // "content"以外のキーがすべて一致するかを検証
+        const isSameGroup = last && Object.keys(item).every(key =>
+            typeof key === "string" && (key === "content" || last[key] === item[key])
+        );
+
+        if (isSameGroup) {
+            // "content"を結合
+            if (typeof last.content === "string" && typeof item.content === "string") {
+                last.content += item.content;
+            } else if (Array.isArray(item.content)) {
+                item.content = mergeObjects(item.content);
+                mergedData.push({ ...item });
+            } else {
+                //throw new Error("contentの型が一致していません");
+            }
+        } else {
+            // 新しいオブジェクトとして追加
+            mergedData.push({ ...item });
+        }
+    }
+    return mergedData;
+}
+
+function get_best_font(char: string, fontFamily: (keyof typeof global.fonts)[] = []) {
+    //return { font: fonts["NotoSerifCJK-Medium"], fontname: "note_en,note_ja_bold,note_ja,NotoSerifCJK-Medium,emoji" };
+    for (const fontName of fontFamily) {
+        const font = global.fonts[fontName];
+        if (!font) throw new Error(String(fontName) + "フォントが見つかりませんでした。");
+        if (isCharacterSupported(font, char) && !(char.match(/\d/) && String(fontName).match("en"))) return { font, fontname: fontName };
+    }
+    return { font: global.fonts[fontFamily[0]], fontname: fontFamily[0] };
+}
+
+function isCharacterSupported(font: Font, char: string) {
+    const glyph = font.charToGlyph(char);
+    return glyph.name !== '.notdef';
+}
+
+export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, markdown = true, minFontSize = 1) {
+    console.log(text);
+    //メモ :見出し→太字 その他→標準 と扱う
+    const chars = markdown ? markdown_to_chars(parse(text, 'extended')) : split(text).map(e => { return { "text": e, ...get_best_font(e, ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "width": 0, "height": 0, "fontRem": 1 } });
+    let fontSize = maxFontSize;
+    while (true) {
+
+        const { text, totalWidth, totalHeight, lines } = calculateTextDimensions(chars, fontSize, width);
+
+        if ((totalWidth <= width && totalHeight <= height) || fontSize == minFontSize) {
+            return { text, fontSize, totalWidth, totalHeight, lines };
+        }
+        fontSize--; // ステップを調整可能
+    }
+}
+
+const margin_bottom = 6;
+
+// テキスト全体の寸法を計算
+function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: number) {
+    let lines: char[][] = [];
+    let line = 0;
+    const font = global.fonts["note_ja"];
+    const EnterScale = (fontSize) / font.unitsPerEm;
+    const EnterCharHeight = (font.ascender - font.descender) * EnterScale;
+
+    for (const char of chars) {
+        const emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text));
+        const scale = (fontSize * char.fontRem) / char.font.unitsPerEm;
+        const glyph = char.font.charToGlyph(char.text);
+        const charWidth = glyph.advanceWidth * scale;
+        const charHeight = (char.font.ascender - char.font.descender) * scale;
+
+        if (char.text == "\n") {
+            line++;
+            continue;
+        }
+        //if (lines[line]) console.log(lines[line].map(e => e.width).reduce((x, y) => x + y));
+        if (lines[line] && (lines[line].map(e => e.width).reduce((x, y) => x + y) + charWidth) > maxWidth) {//横幅超える
+            line++;
+        }
+
+        while (lines[line] == undefined) {
+            lines.push([]);
+        };
+        lines[line].push(Object.assign(char, { "width": (emoji == undefined ? charWidth : EnterCharHeight), "height": (emoji == undefined ? charWidth : EnterCharHeight) }));
+    }
+
+    const text = lines.map(e => e.map(ee => ee.text).join("")).join("\n");
+    const totalWidth = Math.max(...lines.map(e => e.length == 0 ? 0 : (e.map(ee => ee.width).reduce((x, y) => x + y))));
+    const _height = lines.map(e => e.length == 0 ? (EnterCharHeight) : Math.max(...e.map(ee => ee.height))).reduce((x, y) => x + y);
+    const totalHeight = _height + ((lines.length - 1) * margin_bottom);
+
+    return { text, totalWidth, totalHeight, lines };
+}
+
+function getCharUnified(emoji: string, join = "-") {
+    const codePoints = [...emoji].map(char => char.codePointAt(0).toString(16).toUpperCase());
+    return codePoints.join(join);
+}
