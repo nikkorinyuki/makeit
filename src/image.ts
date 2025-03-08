@@ -4,41 +4,42 @@ import axios from 'axios';
 import fs from 'fs';
 import { calc_best_size, fill_chars_center } from './chars';
 
-const canvasWidth = 1200;
-const canvasHeight = 630;
+export const canvasWidth = 1200;
+export const canvasHeight = 630;
 const goldenRatio = 1.618;
 const circle_radius = canvasWidth * (1 / 2.618);
 const margin = 50;
 const maxTextWidth = canvasWidth * (goldenRatio / 2.618) - margin;
 
-interface query {
+
+export interface query {
     text: string;
     icon: string;
     name: string;
     id: string;
-    debug: string;
-    markdown: string;
-    align: (`left` | `right`);
+    debug: boolean;
+    markdown: boolean;
+    direction: (`left` | `right`);
     color: string;
 }
 
 export async function generateImage(query: query) {
+    const textX = query.direction == "left" ? circle_radius + margin / 2 : margin / 2;
+    const text = calc_best_size(query.text, maxTextWidth, canvasHeight, 50, {}, query.markdown);
+    const name = calc_best_size(query.name, maxTextWidth, canvasHeight, 20, { fonts: ["name", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"], italic: true }, query.markdown, 20);
+    const id = calc_best_size(query.id, maxTextWidth, canvasHeight, 20, { fonts: ["name", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"], color: "#8F8F8F" }, query.markdown, 20);
+    const totalHeight = text.totalHeight + name.totalHeight + id.totalHeight;
 
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvasWidth}" height="${canvasHeight}">
       <!-- 背景 (灰色) -->
       <rect style="fill:black;" width="100%" height="100%" />
-      ${await getBackground(query.align, query.color, query.icon)}
+      ${await getBackground(query.direction, query.color, query.icon)}
       <!-- 指定した文字列をSVGパスに変換 -->
-      ${await fill_chars_center(calc_best_size(query.text, canvasWidth, canvasHeight, 40), 0, 0, canvasWidth, canvasHeight)}
-      <g transform="translate(70, 70)">
-        ${generateTextPath(query.text, 1060, 80, { align: "center", color: "#555", lines: 4 })}
-      </g>
+      ${await fill_chars_center(text, textX, (canvasHeight - totalHeight) / 2, maxTextWidth, canvasHeight, query.debug)}
+      ${await fill_chars_center(name, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight, maxTextWidth, canvasHeight, query.debug)}
+      ${await fill_chars_center(id, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + name.totalHeight, maxTextWidth, canvasHeight, query.debug)}
       
-      <!-- ユーザー名をSVGパスに変換 -->
-      <g transform="translate(70, 470)">
-        ${generateTextPath(query.name, 1060, 64, { align: "right", color: "#ccc", lines: 1 })}
-      </g>
     </svg>`;
 
     const buffer = await sharp(Buffer.from(svg))
@@ -47,7 +48,7 @@ export async function generateImage(query: query) {
     return buffer;
 }
 
-async function getBackground(align: (`left` | `right`) = `left`, color: string = "white", iconURL?: string) {
+async function getBackground(direction: (`left` | `right`) = `left`, color: string = "white", iconURL?: string) {
     let icon = "";
     if (iconURL) {
         const response = await axios.get(iconURL, { responseType: 'arraybuffer' });
@@ -63,9 +64,9 @@ async function getBackground(align: (`left` | `right`) = `left`, color: string =
     } else {
         icon = "data:image/png;base64," + fs.readFileSync('./fonts/dummy_icon.png').toString('base64');
     }
-    const x = align == "right" ? canvasWidth + circle_radius : -circle_radius;
+    const x = direction == "right" ? canvasWidth + circle_radius : -circle_radius;
     const y = canvasHeight * (3 / 4);
-    const iconPositionX = align == "right" ? canvasWidth * (goldenRatio / (1 + goldenRatio)) : canvasWidth * (1 / (1 + goldenRatio)) - canvasHeight;
+    const iconPositionX = direction == "right" ? canvasWidth * (goldenRatio / (1 + goldenRatio)) : canvasWidth * (1 / (1 + goldenRatio)) - canvasHeight;
 
     return `
     <defs>

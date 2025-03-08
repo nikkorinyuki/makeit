@@ -2,6 +2,7 @@ import parse from "discord-markdown-parser";
 import split from "graphemesplit";
 import { Font } from "opentype.js";
 import fs from "fs";
+import { canvasWidth } from "./image";
 const emojiData: emoji[] = require('emoji-datasource-twitter');
 
 interface emoji {
@@ -71,27 +72,33 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
             if (emoji) {
                 const emoji_image = emoji.has_img_twitter ? `node_modules/emoji-datasource-twitter/img/twitter/64/${emoji.image}`
                     : `node_modules/emoji-datasource-google/img/google/64/${emoji.image}`;
-                svg.push(`<image href="${"data:image/png;base64," + fs.readFileSync(emoji_image).toString('base64')}" height="${Math.min(char.height, height + y1)}" width="${char.width}" x="${line_x + w}" y="${y}" />`);
+                svg.push(`<image href="${"data:image/png;base64," + fs.readFileSync(emoji_image).toString('base64')}" height="${Math.min(char.height, height + y1)}" width="${char.width}" x="${line_x + w}" y="${Math.min(y, height + y1)}" />`);
             } else {
                 //if (char.fontRem == 0.8125) ctx.fillStyle = "color-mix( in oklab, hsl(228 calc(1 * 5.155%) 38.039% / 1) 100%, black 0% )"; else 
                 //ctx.font = `normal ${char.bold ? "700" : "500"} ${chars.fontSize * char.fontRem}px ${char.fontname}`;
                 const path = char.font.getPath(
                     char.text,
                     line_x + w,
-                    Math.min(y + line_height / 2, height + y1),
-                    chars.fontSize * char.fontRem);
-                path.fill = "#000";
+                    Math.min(y + line_height, height + y1),
+                    chars.fontSize * char.fontRem,
+                    {});
+                path.fill = char.color ?? "#000";
                 svg.push(path.toSVG(2));
             }
-            //if (debug) line_stroke(ctx, line_x + w, y, line_x + w, y + char.height);
+            if (debug) svg.push(line_stroke(line_x + w, y, line_x + w, y + char.height));
             w += char.width;
         }
-        //if (debug) line_stroke(ctx, 0, y, canvasWidth, y);
-        //if (debug) line_stroke(ctx, line_x, y + (line_height / 2), line_x + line_width, y + (line_height / 2));
-        //if (debug) line_stroke(ctx, 0, y + line_height, canvasWidth, y + line_height);
+        if (debug) svg.push(line_stroke(0, y, canvasWidth, y));
+        if (debug) svg.push(line_stroke(line_x, y + (line_height / 2), line_x + line_width, y + (line_height / 2)));
+        if (debug) svg.push(line_stroke(0, y + line_height, canvasWidth, y + line_height));
         y += line_height + margin_bottom;
     }
     return svg.join("");
+}
+
+function line_stroke(x1: number, y1: number, x2: number, y2: number, color: string = "#00ff00") {
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1"/>`;
+
 }
 
 interface char {
@@ -101,6 +108,7 @@ interface char {
     width: number,
     height: number,
     fontRem: number,
+    color?: string,
     bold?: boolean,
     italic?: boolean,
     underline?: boolean,
@@ -110,6 +118,7 @@ interface char {
     spoiler?: boolean
 }
 interface char_option {
+    color?: string,
     fonts?: (keyof typeof global.fonts)[],
     fontRem?: number,
     bold?: boolean,
@@ -240,10 +249,9 @@ function isCharacterSupported(font: Font, char: string) {
     return glyph.name !== '.notdef';
 }
 
-export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, markdown = true, minFontSize = 1) {
-    console.log(text);
+export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, option?: char_option, markdown = true, minFontSize = 1) {
     //メモ :見出し→太字 その他→標準 と扱う
-    const chars = markdown ? markdown_to_chars(parse(text, 'extended')) : split(text).map(e => { return { "text": e, ...get_best_font(e, ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "width": 0, "height": 0, "fontRem": 1 } });
+    const chars = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "width": 0, "height": 0, "fontRem": 1 } });
     let fontSize = maxFontSize;
     while (true) {
 
