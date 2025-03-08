@@ -79,12 +79,14 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                 const path = char.font.getPath(
                     char.text,
                     line_x + w,
-                    Math.min(y + line_height, height + y1),
+                    Math.min(y + line_height , height + y1),
                     chars.fontSize * char.fontRem,
                     {});
+                path.strokeWidth = char.bold ? 2 : 1;
                 path.fill = char.color ?? "#000";
                 svg.push(path.toSVG(2));
             }
+            if (char.underline) svg.push(line_stroke(line_x + w, Math.min(y + line_height, height + y1), line_x + w + char.width, Math.min(y + line_height, height + y1), char.color ?? "black", 2));
             if (debug) svg.push(line_stroke(line_x + w, y, line_x + w, y + char.height));
             w += char.width;
         }
@@ -96,8 +98,8 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
     return svg.join("");
 }
 
-function line_stroke(x1: number, y1: number, x2: number, y2: number, color: string = "#00ff00") {
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1"/>`;
+function line_stroke(x1: number, y1: number, x2: number, y2: number, color: string = "#00ff00", width: number = 1) {
+    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${width}"/>`;
 
 }
 
@@ -135,7 +137,7 @@ const h3: char_option = { "fontRem": 1, "bold": true };
 const subtext: char_option = { "fontRem": 0.8125, "fonts": ["note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"] };
 function markdown_to_chars(markdown_json: import("@khanacademy/simple-markdown").SingleASTNode[], option: char_option = {}): char[] {
     markdown_json = mergeObjects(markdown_json);
-    const result = [];
+    const result: char[] = [];
     option = Object.assign({ "fonts": ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false }, option);
     for (let index = 0; index < markdown_json.length; index++) {
         const markdown = markdown_json[index];
@@ -143,7 +145,7 @@ function markdown_to_chars(markdown_json: import("@khanacademy/simple-markdown")
         switch (markdown.type) {
             case "text":
                 const content = markdown.content;
-                result.push(...split(content).map(e => { return { "text": e, ...get_best_font(e, _option.fonts), "width": 0, "height": 0, "fontRem": _option.fontRem }; }));
+                result.push(...split(content).map(e => { return { "text": e, ...get_best_font(e, _option.fonts), "width": 0, "height": 0, "fontRem": _option.fontRem, ...option }; }));
                 break;
             case "heading":
                 if (markdown.level == 1) _option = Object.assign(_option, h1); else if (markdown.level == 2) _option = Object.assign(_option, h2); else if (markdown.level == 3) _option = Object.assign(_option, h3);
@@ -251,7 +253,7 @@ function isCharacterSupported(font: Font, char: string) {
 
 export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, option?: char_option, markdown = true, minFontSize = 1) {
     //メモ :見出し→太字 その他→標準 と扱う
-    const chars = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "width": 0, "height": 0, "fontRem": 1 } });
+    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "width": 0, "height": 0, "fontRem": 1, ...option } });
     let fontSize = maxFontSize;
     while (true) {
 
@@ -264,7 +266,7 @@ export function calc_best_size(text: string, width: number, height: number, maxF
     }
 }
 
-const margin_bottom = 6;
+export const margin_bottom = 6;
 
 // テキスト全体の寸法を計算
 function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: number) {

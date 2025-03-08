@@ -2,7 +2,7 @@ import sharp from 'sharp';
 import * as opentype from 'opentype.js';
 import axios from 'axios';
 import fs from 'fs';
-import { calc_best_size, fill_chars_center } from './chars';
+import { calc_best_size, fill_chars_center, margin_bottom } from './chars';
 
 export const canvasWidth = 1200;
 export const canvasHeight = 630;
@@ -25,20 +25,20 @@ export interface query {
 
 export async function generateImage(query: query) {
     const textX = query.direction == "left" ? circle_radius + margin / 2 : margin / 2;
-    const text = calc_best_size(query.text, maxTextWidth, canvasHeight, 50, {}, query.markdown);
     const name = calc_best_size(query.name, maxTextWidth, canvasHeight, 20, { fonts: ["name", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"], italic: true }, query.markdown, 20);
-    const id = calc_best_size(query.id, maxTextWidth, canvasHeight, 20, { fonts: ["name", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"], color: "#8F8F8F" }, query.markdown, 20);
-    const totalHeight = text.totalHeight + name.totalHeight + id.totalHeight;
+    const id = calc_best_size(query.id, maxTextWidth, canvasHeight - name.totalHeight - margin_bottom, 20, { fonts: ["name", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"], color: "#8F8F8F" }, query.markdown, 20);
+    const text = calc_best_size(query.text, maxTextWidth, canvasHeight - name.totalHeight - id.totalHeight - margin_bottom * 2, 50, {}, query.markdown);
+    const totalHeight = text.totalHeight + name.totalHeight + id.totalHeight + margin_bottom * 2;
 
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvasWidth}" height="${canvasHeight}">
-      <!-- 背景 (灰色) -->
+      <!-- 背景 -->
       <rect style="fill:black;" width="100%" height="100%" />
       ${await getBackground(query.direction, query.color, query.icon)}
       <!-- 指定した文字列をSVGパスに変換 -->
       ${await fill_chars_center(text, textX, (canvasHeight - totalHeight) / 2, maxTextWidth, canvasHeight, query.debug)}
-      ${await fill_chars_center(name, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight, maxTextWidth, canvasHeight, query.debug)}
-      ${await fill_chars_center(id, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + name.totalHeight, maxTextWidth, canvasHeight, query.debug)}
+      ${await fill_chars_center(name, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + margin_bottom, maxTextWidth, canvasHeight, query.debug)}
+      ${await fill_chars_center(id, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + name.totalHeight + margin_bottom * 2, maxTextWidth, canvasHeight, query.debug)}
       
     </svg>`;
 
