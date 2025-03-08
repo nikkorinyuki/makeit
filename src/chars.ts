@@ -47,12 +47,12 @@ interface emoji {
 export async function fill_chars_center(chars: { lines: char[][], fontSize: number }, x: number, y: number, width: number, height: number, debug: boolean = false) {
     const svg: string[] = [];
     const y1 = y;
-    console.log("最大の高さ:" + height);
-    console.log(chars)
+    if (debug) console.log("最大の高さ:" + height);
+    if (debug) console.log(chars)
     /*const margin_bottom = (height - (str.split("\n").map(e => calc_text_height(ctx, e)).reduce(function (sum, element) {
         return sum + element;
     }, 0))) / (str.split("\n").length + 1);*/
-    console.log(margin_bottom);
+    if (debug) console.log(margin_bottom);
     const font = global.fonts["note_ja"];
     const EnterScale = (chars.fontSize) / font.unitsPerEm;
     const EnterCharHeight = (font.ascender - font.descender) * EnterScale;
@@ -79,7 +79,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                 const path = char.font.getPath(
                     char.text,
                     line_x + w,
-                    Math.min(y + line_height , height + y1),
+                    Math.min(y + line_height, height + y1),
                     chars.fontSize * char.fontRem,
                     {});
                 path.strokeWidth = char.bold ? 2 : 1;
