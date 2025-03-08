@@ -253,7 +253,7 @@ function isCharacterSupported(font: Font, char: string) {
 
 export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, option?: char_option, markdown = true, minFontSize = 1) {
     //メモ :見出し→太字 その他→標準 と扱う
-    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "width": 0, "height": 0, "fontRem": 1, ...option } });
+    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "width": 0, "height": 0, "fontRem": 1, ...option } });
     let fontSize = maxFontSize;
     while (true) {
 
@@ -266,7 +266,7 @@ export function calc_best_size(text: string, width: number, height: number, maxF
     }
 }
 
-export const margin_bottom = 6;
+export const margin_bottom = 10;
 
 // テキスト全体の寸法を計算
 function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: number) {

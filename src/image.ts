@@ -30,6 +30,7 @@ export async function generateImage(query: query) {
     const id = calc_best_size(query.id, maxTextWidth, canvasHeight - name.totalHeight - margin_bottom, 20, { fonts: ["name", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"], color: "#8F8F8F" }, query.markdown, 20);
     const text = calc_best_size(query.text, maxTextWidth, canvasHeight - name.totalHeight - id.totalHeight - margin_bottom * 2, 50, { color: query.tcolor ?? "#000" }, query.markdown);
     const totalHeight = text.totalHeight + name.totalHeight + id.totalHeight + margin_bottom * 2;
+    const nikkorinyuki = calc_best_size("制作nikkorinyuki", maxTextWidth, canvasHeight, 15, { color: "#8F8F8F", fonts: ["name", "NotoSansJP-Medium"] }, false, 15);
 
     const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvasWidth}" height="${canvasHeight}">
@@ -40,7 +41,7 @@ export async function generateImage(query: query) {
       ${await fill_chars_center(text, textX, (canvasHeight - totalHeight) / 2, maxTextWidth, canvasHeight, query.debug)}
       ${await fill_chars_center(name, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + margin_bottom, maxTextWidth, canvasHeight, query.debug)}
       ${await fill_chars_center(id, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + name.totalHeight + margin_bottom * 2, maxTextWidth, canvasHeight, query.debug)}
-      
+      ${await fill_chars_center(nikkorinyuki, query.direction == "right" ? 5 : canvasWidth - 5 - nikkorinyuki.totalWidth, canvasHeight - nikkorinyuki.totalHeight - 5, nikkorinyuki.totalWidth, nikkorinyuki.totalHeight, query.debug)}
     </svg>`;
 
     const buffer = await sharp(Buffer.from(svg))
