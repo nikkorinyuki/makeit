@@ -33,7 +33,7 @@ for (const key in global.fonts) {
 
 const ValidationSchema = {
     type: 'object',
-    required: [],
+    required: ["text", "name", "id"],
     properties: {
         text: { type: 'string' },
         icon: { type: 'string' },
@@ -42,7 +42,8 @@ const ValidationSchema = {
         debug: { type: "boolean" },
         markdown: { type: "boolean" },
         direction: { type: 'string', enum: ['left', 'right'] },
-        color: { type: 'string' }
+        color: { type: 'string' },
+        tcolor: { type: 'string' }
     }
 };
 
@@ -58,6 +59,11 @@ fastify.get("*", async (request, reply) => {
     request.query.debug = string2bool(request.query.debug);
     request.query.markdown = string2bool(request.query.markdown);
     request.query.direction = request.query.direction == "right" ? "right" : "left";
+    request.query.text = request.query.text ?? "Text";
+    request.query.name = request.query.name ?? "name";
+    request.query.id = request.query.id ?? "id";
+    request.query.color = request.query.color ?? "#fff";
+    request.query.tcolor = request.query.tcolor ?? "#000";
     const buffer = await generateImage(request.query as query);
     reply.type("image/jpeg").send(buffer);
 });
