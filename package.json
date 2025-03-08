@@ -14,7 +14,7 @@
   "author": "",
   "main": "dist/app.js",
   "scripts": {
-    "start": "node dist/app.js",
+    "start": "tsc && node dist/app.js",
     "dev": "ts-node-dev src/app.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "postinstall": "patch-package"
