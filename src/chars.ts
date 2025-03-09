@@ -79,7 +79,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                 const path = char.font.getPath(
                     char.text,
                     line_x + w,
-                    Math.min(y + line_height, height + y1),
+                    Math.min(y + (line_height -char.height)/2 + char.height, height + y1),
                     chars.fontSize * char.fontRem,
                     {});
                 path.strokeWidth = char.bold ? 2 : 1;
