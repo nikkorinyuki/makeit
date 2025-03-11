@@ -53,7 +53,7 @@ const opts: RouteShorthandOptions<RawServerDefault, IncomingMessage, ServerRespo
     }
 }
 
-fastify.get("*", async (request, reply) => {
+fastify.get("/", async (request, reply) => {
     console.log(request.ips);
     console.log(request.query)
     request.query.debug = string2bool(request.query.debug);
@@ -68,7 +68,7 @@ fastify.get("*", async (request, reply) => {
     reply.type("image/jpeg").send(buffer);
 });
 
-fastify.post("*", opts, async (request, reply) => {
+fastify.post("/", opts, async (request, reply) => {
     const buffer = await generateImage(request.body as query);
     reply.type("image/jpeg").send(buffer);
 });
