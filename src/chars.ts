@@ -71,6 +71,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
             if (!emoji) emoji = emojiData.find(e => e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase());
             if (debug) console.log(`${char.text} ${getCharUnified(char.text)} / Font:${char.fontname.toString()}`);
             const yc = y + (line_height - char.height.total) / 2;
+            const yc2 = y + (line_height - char.height.ascender) / 2;
             if (emoji) {
                 const emoji_image = emoji.has_img_twitter ? `node_modules/emoji-datasource-twitter/img/twitter/64/${emoji.image}`
                     : `node_modules/emoji-datasource-google/img/google/64/${emoji.image}`;
@@ -81,7 +82,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                 const path = char.font.getPath(
                     char.text,
                     line_x + w,
-                    Math.min(yc + char.height.ascender, height + y1),
+                    Math.min(char.text.match(/[A-Z]/i) ? (yc2 + char.height.ascender) : (yc + char.height.ascender), height + y1),
                     chars.fontSize * char.fontRem,
                     {});
                 path.strokeWidth = char.bold ? 2 : 1;
@@ -89,7 +90,8 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                 svg.push(path.toSVG(2));
             }
             if (char.underline) svg.push(line_stroke(line_x + w, Math.min(y + line_height, height + y1), line_x + w + char.width, Math.min(y + line_height, height + y1), char.color ?? "black", 2));
-            if (debug) svg.push(line_stroke(line_x + w, yc, line_x + w, yc + char.height.total));
+            if (debug) svg.push(line_stroke(line_x + w, yc, line_x + w, yc + char.height.ascender));
+            if (debug) svg.push(line_stroke(line_x + w, yc + char.height.ascender, line_x + w, yc + char.height.total, "#465DAA"));
             w += char.width;
         }
         if (debug) svg.push(line_stroke(0, y, canvasWidth, y));
