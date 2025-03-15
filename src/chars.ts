@@ -68,7 +68,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
         for (const char of line) {
             let emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text));
             if (!emoji) emoji = emojiData.find(e => e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase());
-            if (debug) console.log(char.text, getCharUnified(char.text));
+            if (debug) console.log(`${char.text} ${getCharUnified(char.text)} / Font:${char.fontname.toString()}`);
             const yc = y + (line_height - char.height.total) / 2;
             if (emoji) {
                 const emoji_image = emoji.has_img_twitter ? `node_modules/emoji-datasource-twitter/img/twitter/64/${emoji.image}`
@@ -139,11 +139,11 @@ interface char_option {
 const h1: char_option = { "fontRem": 1.5, "bold": true };
 const h2: char_option = { "fontRem": 1.25, "bold": true };
 const h3: char_option = { "fontRem": 1, "bold": true };
-const subtext: char_option = { "fontRem": 0.8125, "fonts": ["note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"] };
+const subtext: char_option = { "fontRem": 0.8125, "fonts": ["note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"] };
 function markdown_to_chars(markdown_json: import("@khanacademy/simple-markdown").SingleASTNode[], option: char_option = {}): char[] {
     markdown_json = mergeObjects(markdown_json);
     const result: char[] = [];
-    option = Object.assign({ "fonts": ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false }, option);
+    option = Object.assign({ "fonts": ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false }, option);
     for (let index = 0; index < markdown_json.length; index++) {
         const markdown = markdown_json[index];
         let _option: char_option = JSON.parse(JSON.stringify(option));
@@ -253,12 +253,13 @@ function get_best_font(char: string, fontFamily: (keyof typeof global.fonts)[] =
 
 function isCharacterSupported(font: Font, char: string) {
     const glyph = font.charToGlyph(char);
-    return glyph.name !== '.notdef';
+    console.log(char, glyph.name, font.names.fontFamily, glyph.unicodes.length);
+    return glyph.name !== '.notdef' && glyph.unicodes.length !== 0;
 }
 
 export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, option?: char_option, markdown = true, minFontSize = 1) {
     //メモ :見出し→太字 その他→標準 と扱う
-    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "fontRem": 1, ...option } });
+    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"]), "fontRem": 1, ...option } });
     let fontSize = maxFontSize;
     while (true) {
 
@@ -288,7 +289,7 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
         const scale = defaultscale * char.fontRem;
         const glyph = char.font.charToGlyph(char.text);
         const charWidth = glyph.advanceWidth * scale;
-        //const charHeight = (char.font.ascender - char.font.descender) * scale;
+        //const charHeight = (char.font.ascender - char.font.descender) * scale;//不正確
         const ascender = glyph.yMax * scale;
         const descender = Math.abs(glyph.yMin * scale);
         const charHeight = ascender + descender;

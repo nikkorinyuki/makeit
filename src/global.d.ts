@@ -5,7 +5,6 @@ export { };
 
 declare global {
     var fonts: {
-        "emoji": opentype.Font | null,
         "note_ja": opentype.Font | null,
         "note_ja_bold": opentype.Font | null,
         "note_en": opentype.Font | null,

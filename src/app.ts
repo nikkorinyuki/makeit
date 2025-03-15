@@ -16,7 +16,6 @@ fastify.listen({ port, host: "0.0.0.0" }, (err, address) => {
 });
 
 global.fonts = {
-    "emoji": null,
     "note_ja": null,
     "note_ja_bold": null,
     "note_en": null,
