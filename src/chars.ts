@@ -66,6 +66,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
         const line_height = line.length != 0 ? Math.max(...line.map(e => e.height.total)) : EnterCharHeight;
         let w = 0;
         for (const char of line) {
+            if (char.text == " ") console.log(char.width, JSON.stringify(char.height));
             let emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text));
             if (!emoji) emoji = emojiData.find(e => e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase());
             if (debug) console.log(`${char.text} ${getCharUnified(char.text)} / Font:${char.fontname.toString()}`);
@@ -279,7 +280,7 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
     let line = 0;
     const font = global.fonts["note_ja"];
     const あglyph = font.charToGlyph("あ");
-    //const あcharWidth = あglyph.advanceWidth;//使われなかった
+    const あcharWidth = あglyph.advanceWidth;//使われなかった
     const あcharHeight = あglyph.yMax - あglyph.yMin;
     const defaultscale = fontSize / font.unitsPerEm;
 
@@ -289,9 +290,9 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
         const glyph = char.font.charToGlyph(char.text);
         const charWidth = glyph.advanceWidth * scale;
         //const charHeight = (char.font.ascender - char.font.descender) * scale;//不正確
-        const ascender = glyph.yMax * scale;
-        const descender = Math.abs(glyph.yMin * scale);
-        const charHeight = ascender + descender;
+        const ascender = glyph.yMax ? glyph.yMax * scale : null;
+        const descender = glyph.yMin ? Math.abs(glyph.yMin * scale) : null;
+        const charHeight = (!ascender || !descender) ? (あcharHeight * scale) : (ascender + descender);
 
         if (char.text == "\n") {
             line++;
@@ -309,7 +310,7 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
             "width": (emoji == undefined ? charWidth : あcharHeight * scale), "height": {
                 "total": (emoji == undefined ? charHeight : あcharHeight * scale),
                 "ascender": (emoji == undefined ? ascender : あcharHeight * scale),
-                "descender": (emoji == undefined ? descender : 0),
+                "descender": (emoji == undefined ? descender : 0) ?? 0,
             }
         }));
     }
