@@ -2,6 +2,7 @@ import opentype from 'opentype.js';
 import { generateImage, query } from "./image";
 import { FastifyBaseLogger, FastifySchema, FastifyTypeProviderDefault, RawServerDefault, RouteGenericInterface, RouteShorthandOptions } from 'fastify';
 import { IncomingMessage, ServerResponse } from 'http';
+import { format } from 'path';
 
 
 const fastify = require("fastify")({ logger: true, trustProxy: true });
@@ -43,7 +44,8 @@ const ValidationSchema = {
         markdown: { type: "boolean" },
         direction: { type: 'string', enum: ['left', 'right'] },
         color: { type: 'string' },
-        tcolor: { type: 'string' }
+        tcolor: { type: 'string' },
+        format: { type: 'string', enum: ['png', 'jpeg', 'webp', 'tiff', 'avif', 'svg', 'raw'] }
     }
 };
 
@@ -64,15 +66,35 @@ fastify.get("/", async (request, reply) => {
     request.query.id = request.query.id ?? "id";
     request.query.color = request.query.color ?? "#fff";
     request.query.tcolor = request.query.tcolor ?? "#000";
+    request.query.format = request.query.format ?? "png";
     const buffer = await generateImage(request.query as query);
-    reply.type("image/jpeg").send(buffer);
+    reply.type(getMIME(request.query.format)).send(buffer);
 });
 
 fastify.post("/", opts, async (request, reply) => {
     const buffer = await generateImage(request.body as query);
-    reply.type("image/jpeg").send(buffer);
+    reply.type(getMIME(request.body.format)).send(buffer);
 });
 
 function string2bool(str: string) {
     return str && Boolean(str.match(/^(true|1)$/i));
+}
+
+function getMIME(format: 'png' | 'jpeg' | 'webp' | 'tiff' | 'avif' | 'svg' | 'raw') {
+    switch (format) {
+        case "jpeg":
+            return "image/jpeg";
+        case "webp":
+            return "image/webp";
+        case "tiff":
+            return "image/tiff";
+        case "avif":
+            return "image/avif";
+        case "svg":
+            return "image/svg+xml";
+        case "raw":
+            return "application/octet-stream";
+        default://png
+            return "image/png";
+    }
 }

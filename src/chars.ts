@@ -63,23 +63,24 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
             return sum + element;
         }, 0);
         const line_x = x + (width - line_width) / 2;
-        const line_height = line.length != 0 ? Math.max(...line.map(e => e.height)) : EnterCharHeight;
+        const line_height = line.length != 0 ? Math.max(...line.map(e => e.height.total)) : EnterCharHeight;
         let w = 0;
         for (const char of line) {
             let emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text));
             if (!emoji) emoji = emojiData.find(e => e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase());
-            if (debug) console.log(char.text, getCharUnified(char.text))
+            if (debug) console.log(char.text, getCharUnified(char.text));
+            const yc = y + (line_height - char.height.total) / 2;
             if (emoji) {
                 const emoji_image = emoji.has_img_twitter ? `node_modules/emoji-datasource-twitter/img/twitter/64/${emoji.image}`
                     : `node_modules/emoji-datasource-google/img/google/64/${emoji.image}`;
-                svg.push(`<image href="${"data:image/png;base64," + fs.readFileSync(emoji_image).toString('base64')}" height="${Math.min(char.height, height + y1)}" width="${char.width}" x="${line_x + w}" y="${Math.min(y, height + y1)}" />`);
+                svg.push(`<image href="${"data:image/png;base64," + fs.readFileSync(emoji_image).toString('base64')}" height="${Math.min(char.height.total, height + y1)}" width="${char.width}" x="${line_x + w}" y="${Math.min(y, height + y1)}" />`);
             } else {
                 //if (char.fontRem == 0.8125) ctx.fillStyle = "color-mix( in oklab, hsl(228 calc(1 * 5.155%) 38.039% / 1) 100%, black 0% )"; else 
                 //ctx.font = `normal ${char.bold ? "700" : "500"} ${chars.fontSize * char.fontRem}px ${char.fontname}`;
                 const path = char.font.getPath(
                     char.text,
                     line_x + w,
-                    Math.min(y + (line_height -char.height)/2 + char.height, height + y1),
+                    Math.min(yc + char.height.ascender, height + y1),
                     chars.fontSize * char.fontRem,
                     {});
                 path.strokeWidth = char.bold ? 2 : 1;
@@ -87,7 +88,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                 svg.push(path.toSVG(2));
             }
             if (char.underline) svg.push(line_stroke(line_x + w, Math.min(y + line_height, height + y1), line_x + w + char.width, Math.min(y + line_height, height + y1), char.color ?? "black", 2));
-            if (debug) svg.push(line_stroke(line_x + w, y, line_x + w, y + char.height));
+            if (debug) svg.push(line_stroke(line_x + w, yc, line_x + w, yc + char.height.total));
             w += char.width;
         }
         if (debug) svg.push(line_stroke(0, y, canvasWidth, y));
@@ -107,8 +108,12 @@ interface char {
     text: string,
     font: Font;
     fontname: (keyof typeof global.fonts);
-    width: number,
-    height: number,
+    width?: number,
+    height?: {
+        total: number,
+        ascender: number,
+        descender: number,
+    },
     fontRem: number,
     color?: string,
     bold?: boolean,
@@ -145,7 +150,7 @@ function markdown_to_chars(markdown_json: import("@khanacademy/simple-markdown")
         switch (markdown.type) {
             case "text":
                 const content = markdown.content;
-                result.push(...split(content).map(e => { return { "text": e, ...get_best_font(e, _option.fonts), "width": 0, "height": 0, "fontRem": _option.fontRem, ...option }; }));
+                result.push(...split(content).map(e => { return { "text": e, ...get_best_font(e, _option.fonts), "fontRem": _option.fontRem, ...option }; }));
                 break;
             case "heading":
                 if (markdown.level == 1) _option = Object.assign(_option, h1); else if (markdown.level == 2) _option = Object.assign(_option, h2); else if (markdown.level == 3) _option = Object.assign(_option, h3);
@@ -253,7 +258,7 @@ function isCharacterSupported(font: Font, char: string) {
 
 export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, option?: char_option, markdown = true, minFontSize = 1) {
     //メモ :見出し→太字 その他→標準 と扱う
-    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "width": 0, "height": 0, "fontRem": 1, ...option } });
+    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "emoji"]), "fontRem": 1, ...option } });
     let fontSize = maxFontSize;
     while (true) {
 
@@ -273,15 +278,20 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
     let lines: char[][] = [];
     let line = 0;
     const font = global.fonts["note_ja"];
-    const EnterScale = (fontSize) / font.unitsPerEm;
-    const EnterCharHeight = (font.ascender - font.descender) * EnterScale;
+    const あglyph = font.charToGlyph("あ");
+    //const あcharWidth = あglyph.advanceWidth;//使われなかった
+    const あcharHeight = あglyph.yMax - あglyph.yMin;
+    const defaultscale = fontSize / font.unitsPerEm;
 
     for (const char of chars) {
         const emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text));
-        const scale = (fontSize * char.fontRem) / char.font.unitsPerEm;
+        const scale = defaultscale * char.fontRem;
         const glyph = char.font.charToGlyph(char.text);
         const charWidth = glyph.advanceWidth * scale;
-        const charHeight = (char.font.ascender - char.font.descender) * scale;
+        //const charHeight = (char.font.ascender - char.font.descender) * scale;
+        const ascender = glyph.yMax * scale;
+        const descender = Math.abs(glyph.yMin * scale);
+        const charHeight = ascender + descender;
 
         if (char.text == "\n") {
             line++;
@@ -295,12 +305,18 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
         while (lines[line] == undefined) {
             lines.push([]);
         };
-        lines[line].push(Object.assign(char, { "width": (emoji == undefined ? charWidth : EnterCharHeight), "height": (emoji == undefined ? charWidth : EnterCharHeight) }));
+        lines[line].push(Object.assign(char, {
+            "width": (emoji == undefined ? charWidth : あcharHeight * scale), "height": {
+                "total": (emoji == undefined ? charHeight : あcharHeight * scale),
+                "ascender": (emoji == undefined ? ascender : あcharHeight * scale),
+                "descender": (emoji == undefined ? descender : 0),
+            }
+        }));
     }
 
     const text = lines.map(e => e.map(ee => ee.text).join("")).join("\n");
     const totalWidth = Math.max(...lines.map(e => e.length == 0 ? 0 : (e.map(ee => ee.width).reduce((x, y) => x + y))));
-    const _height = lines.map(e => e.length == 0 ? (EnterCharHeight) : Math.max(...e.map(ee => ee.height))).reduce((x, y) => x + y);
+    const _height = lines.map(e => e.length == 0 ? (あcharHeight * defaultscale) : Math.max(...e.map(ee => ee.height.total))).reduce((x, y) => x + y);
     const totalHeight = _height + ((lines.length - 1) * margin_bottom);
 
     return { text, totalWidth, totalHeight, lines };

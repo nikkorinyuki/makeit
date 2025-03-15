@@ -22,6 +22,7 @@ export interface query {
     direction: (`left` | `right`);
     color: string;
     tcolor: string;
+    format: (`png` | `jpeg` | `webp` | `tiff` | `avif` | `svg` | `raw`);
 }
 
 export async function generateImage(query: query) {
@@ -44,10 +45,29 @@ export async function generateImage(query: query) {
       ${await fill_chars_center(nikkorinyuki, query.direction == "right" ? 5 : canvasWidth - 5 - nikkorinyuki.totalWidth, canvasHeight - nikkorinyuki.totalHeight - 5, nikkorinyuki.totalWidth, nikkorinyuki.totalHeight, query.debug)}
     </svg>`;
 
-    const buffer = await sharp(Buffer.from(svg))
-        .png()
-        .toBuffer();
-    return buffer;
+    if (query.format == "svg") return Buffer.from(svg);
+    const buffer = sharp(Buffer.from(svg));
+    switch (query.format) {
+        case "jpeg":
+            buffer.jpeg();
+            break;
+        case "webp":
+            buffer.webp();
+            break;
+        case "tiff":
+            buffer.tiff();
+            break;
+        case "avif":
+            buffer.avif();
+            break;
+        case "raw":
+            buffer.raw();
+            break;
+        default:
+            buffer.png();
+            break;
+    }
+    return await buffer.toBuffer();
 }
 
 async function getBackground(direction: (`left` | `right`) = `left`, color: string = "white", iconURL?: string) {
