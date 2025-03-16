@@ -83,7 +83,7 @@ async function getBackground(direction: (`left` | `right`) = `left`, color: stri
         // Data URL に変換
         const dataUrl = `data:${contentType};base64,${base64String}`;
         icon = dataUrl;
-    } else if (iconURL.startsWith("data:")) {
+    } else if (iconURL && iconURL.startsWith("data:")) {
         icon = iconURL;
     } else {
         icon = "data:image/png;base64," + fs.readFileSync('./fonts/dummy_icon.png').toString('base64');
