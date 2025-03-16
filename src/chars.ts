@@ -72,6 +72,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
             if (debug) console.log(`${char.text} ${getCharUnified(char.text)} / Font:${char.fontname.toString()}`);
             const yc = y + (line_height - char.height.total) / 2;
             const yc2 = y + (line_height - char.height.ascender) / 2;
+            let path_y = yc + char.height.ascender;
             if (emoji) {
                 const emoji_image = emoji.has_img_twitter ? `node_modules/emoji-datasource-twitter/img/twitter/64/${emoji.image}`
                     : `node_modules/emoji-datasource-google/img/google/64/${emoji.image}`;
@@ -79,14 +80,13 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
             } else {
                 //if (char.fontRem == 0.8125) ctx.fillStyle = "color-mix( in oklab, hsl(228 calc(1 * 5.155%) 38.039% / 1) 100%, black 0% )"; else 
                 //ctx.font = `normal ${char.bold ? "700" : "500"} ${chars.fontSize * char.fontRem}px ${char.fontname}`;
-                let path_y = yc + char.height.ascender;
                 if (char.text == "…") {
                     path_y = y + line_height;
                 } else if (char.height.ascender < char.height.descender || char.text.match(/[.,]/)) {
                     path_y = y + line_height * 0.8;
                 }
                 if (char.fontname != "note_ja" && char.fontname != "note_ja_bold" && char.fontname != "note_en") {
-                    if (char.text.match(/[A-Z]/)) {
+                    if (char.text.match(/[A-Z\-]/)) {
                         path_y = yc2 + char.height.ascender;
                     } else if (char.text.match(/[a-z]/)) {
                         path_y = y + 15;
@@ -107,8 +107,8 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                 svg.push(path.toSVG(2));
             }
             if (char.underline) svg.push(line_stroke(line_x + w, Math.min(y + line_height, height + y1), line_x + w + char.width, Math.min(y + line_height, height + y1), char.color ?? "black", 2));
-            if (debug) svg.push(line_stroke(line_x + w, yc, line_x + w, yc + char.height.ascender));
-            if (debug) svg.push(line_stroke(line_x + w, yc + char.height.ascender, line_x + w, yc + char.height.total, "#465DAA"));
+            if (debug) svg.push(line_stroke(line_x + w, path_y, line_x + w, path_y + char.height.descender, "#465DAA"));
+            if (debug) svg.push(line_stroke(line_x + w, path_y, line_x + w, path_y - char.height.ascender));
             w += char.width;
         }
         if (debug) svg.push(line_stroke(0, y, canvasWidth, y));
