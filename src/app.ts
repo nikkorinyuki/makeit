@@ -3,9 +3,15 @@ import { generateImage, query } from "./image";
 import { FastifyBaseLogger, FastifySchema, FastifyTypeProviderDefault, RawServerDefault, RouteGenericInterface, RouteShorthandOptions } from 'fastify';
 import { IncomingMessage, ServerResponse } from 'http';
 import { format } from 'path';
+import cors from '@fastify/cors'
 
 
 const fastify = require("fastify")({ logger: true, trustProxy: true });
+
+fastify.register(cors, {
+  // 全てのオリジンからのリクエストを許可
+  origin: "*",
+});
 const port = Number(process.env.PORT) || 3001;
 fastify.listen({ port, host: "0.0.0.0" }, (err, address) => {
     if (err) {

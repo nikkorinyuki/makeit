@@ -29,6 +29,7 @@
     "typescript": "^5.8.2"
   },
   "dependencies": {
+    "@fastify/cors": "^8.5.0",
     "axios": "^1.8.2",
     "discord-markdown-parser": "^1.2.0",
     "emoji-datasource-twitter": "^15.1.2",
