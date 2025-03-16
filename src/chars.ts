@@ -84,6 +84,8 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                     path_y = y + line_height;
                 } else if (char.height.ascender < char.height.descender || char.text.match(/[.,]/)) {
                     path_y = y + line_height * 0.8;
+                }else if(char.text.match(/[ー～]/)){
+                    path_y = y + line_height / 2 + char.height.ascender;
                 }
                 if (char.fontname != "note_ja" && char.fontname != "note_ja_bold" && char.fontname != "note_en") {
                     if (char.text.match(/[A-Z\-]/)) {
@@ -307,6 +309,7 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
         const emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text));
         const scale = defaultscale * char.fontRem;
         const glyph = char.font.charToGlyph(char.text);
+        
         const charWidth = glyph.advanceWidth * scale;
         //const charHeight = (char.font.ascender - char.font.descender) * scale;//不正確
         const ascender = glyph.yMax ? glyph.yMax * scale : null;
