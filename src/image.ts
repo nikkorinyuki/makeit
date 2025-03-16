@@ -72,7 +72,7 @@ export async function generateImage(query: query) {
 
 async function getBackground(direction: (`left` | `right`) = `left`, color: string = "white", iconURL?: string) {
     let icon = "";
-    if (iconURL) {
+    if (iconURL && !iconURL.startsWith("data:")) {
         const response = await axios.get(iconURL, { responseType: 'arraybuffer' });
         // Content-Type を取得（サーバーが正しく返している場合）
         const contentType = response.headers['content-type'] || 'image/png'; // デフォルトは image/png
@@ -83,6 +83,8 @@ async function getBackground(direction: (`left` | `right`) = `left`, color: stri
         // Data URL に変換
         const dataUrl = `data:${contentType};base64,${base64String}`;
         icon = dataUrl;
+    } else if (iconURL.startsWith("data:")) {
+        icon = iconURL;
     } else {
         icon = "data:image/png;base64," + fs.readFileSync('./fonts/dummy_icon.png').toString('base64');
     }
