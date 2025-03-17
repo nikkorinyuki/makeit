@@ -33,17 +33,17 @@ export async function generateImage(query: query) {
     const totalHeight = text.totalHeight + name.totalHeight + id.totalHeight + margin_bottom * 2;
     const nikkorinyuki = calc_best_size("制作nikkorinyuki", maxTextWidth, canvasHeight, 15, { color: "#8F8F8F", fonts: ["NotoSansJP-Medium"] }, false, 15);
 
-    const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvasWidth}" height="${canvasHeight}">
-      <!-- 背景 -->
-      <rect style="fill:black;" width="100%" height="100%" />
-      ${await getBackground(query.direction, query.color, query.icon)}
-      <!-- 指定した文字列をSVGパスに変換 -->
-      ${await fill_chars_center(text, textX, (canvasHeight - totalHeight) / 2, maxTextWidth, canvasHeight, query.debug)}
-      ${await fill_chars_center(name, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + margin_bottom, maxTextWidth, canvasHeight, query.debug)}
-      ${await fill_chars_center(id, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + name.totalHeight + margin_bottom * 2, maxTextWidth, canvasHeight, query.debug)}
-      ${await fill_chars_center(nikkorinyuki, query.direction == "right" ? 5 : canvasWidth - 5 - nikkorinyuki.totalWidth, canvasHeight - nikkorinyuki.totalHeight - 5, nikkorinyuki.totalWidth, nikkorinyuki.totalHeight, query.debug)}
-    </svg>`;
+    const svg = [
+        `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${canvasWidth}" height="${canvasHeight}">`,
+        `<!-- 背景 -->`,
+        `${await getBackground(query.direction, query.color, query.icon)}`,
+        `<!-- 文字描画 -->`,
+        `${await fill_chars_center(text, textX, (canvasHeight - totalHeight) / 2, maxTextWidth, canvasHeight, query.debug)}`,
+        `${await fill_chars_center(name, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + margin_bottom, maxTextWidth, canvasHeight, query.debug)}`,
+        `${await fill_chars_center(id, textX, (canvasHeight - totalHeight) / 2 + text.totalHeight + name.totalHeight + margin_bottom * 2, maxTextWidth, canvasHeight, query.debug)}`,
+        `${await fill_chars_center(nikkorinyuki, query.direction == "right" ? 5 : canvasWidth - 5 - nikkorinyuki.totalWidth, canvasHeight - nikkorinyuki.totalHeight - 5, nikkorinyuki.totalWidth, nikkorinyuki.totalHeight, query.debug)}`,
+        `</svg>`
+    ].join("");
 
     if (query.format == "svg") return Buffer.from(svg);
     const buffer = sharp(Buffer.from(svg));

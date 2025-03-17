@@ -1,6 +1,6 @@
 import parse from "discord-markdown-parser";
 import split from "graphemesplit";
-import { Font } from "opentype.js";
+import { Font, Path } from "opentype.js";
 import fs from "fs";
 import { canvasWidth } from "./image";
 const emojiData: emoji[] = require('emoji-datasource-twitter');
@@ -46,6 +46,13 @@ interface emoji {
 }
 export async function fill_chars_center(chars: { lines: char[][], fontSize: number }, x: number, y: number, width: number, height: number, debug: boolean = false) {
     const svg: string[] = [];
+    svg.push(...[
+        `<defs>`,
+        `<filter id="bold" x="-10%" y="-10%" width="120%" height="120%" filterUnits="userSpaceOnUse">`,
+        `<feMorphology operator="dilate" radius="0.4" />`,
+        `</filter>`,
+        `</defs>`
+    ]);//太字用
     const y1 = y;
     if (debug) console.log("最大の高さ:" + height);
     if (debug) console.log(chars)
@@ -85,9 +92,12 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                     Math.min(path_y, height + y1),
                     chars.fontSize * char.fontRem,
                     {});
-                path.strokeWidth = char.bold ? 2 : 1;
                 path.fill = char.color ?? "#000";
-                svg.push(path.toSVG(2));
+                let char_svg = getAttributes(path.toSVG(2));
+                char_svg.transform = "skewX(-15) scale(1, 1)";
+                if (char.italic) char_svg["transform-origin"] = `${line_x + w + char.width / 2}px ${path_y - char.height.total / 2}px`;
+                if (char.bold) char_svg.filter = "url(#bold)";
+                svg.push(`<path ${Object.keys(char_svg).map(e => `${e}="${char_svg[e]}"`).join(" ")} />`);
             }
             if (char.underline) svg.push(line_stroke(line_x + w, Math.min(y + line_height, height + y1), line_x + w + char.width, Math.min(y + line_height, height + y1), char.color ?? "black", 2));
             if (debug) svg.push(line_stroke(line_x + w, path_y, line_x + w, path_y + char.height.descender, "#465DAA"));
@@ -104,7 +114,23 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
 
 function line_stroke(x1: number, y1: number, x2: number, y2: number, color: string = "#00ff00", width: number = 1) {
     return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="${width}"/>`;
+}
 
+function getAttributes(svgTag: string) {
+    const attributes: Record<string, string> = {};
+
+    // 正規表現で属性を抽出
+    const matches = svgTag.match(/\s([a-zA-Z-]+)="([^"]+)"/g);
+    if (matches) {
+        matches.forEach(attr => {
+            const match = attr.match(/([a-zA-Z-]+)="([^"]+)"/);
+            if (match) {
+                attributes[match[1]] = match[2];
+            }
+        });
+    }
+
+    return attributes;
 }
 
 interface char {
