@@ -71,9 +71,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
             let emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text));
             if (!emoji) emoji = emojiData.find(e => e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase());
             if (debug) console.log(`${char.text} ${getCharUnified(char.text)} / Font:${char.fontname.toString()}`);
-            const yc = y + (line_height - char.height.total) / 2;
-            const yc2 = y + (line_height - char.height.ascender) / 2;
-            let path_y = yc + char.height.ascender;
+            const path_y = y + max_ascender;
             if (emoji) {
                 const emoji_image = emoji.has_img_twitter ? `node_modules/emoji-datasource-twitter/img/twitter/64/${emoji.image}`
                     : `node_modules/emoji-datasource-google/img/google/64/${emoji.image}`;
@@ -81,7 +79,6 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
             } else {
                 //if (char.fontRem == 0.8125) ctx.fillStyle = "color-mix( in oklab, hsl(228 calc(1 * 5.155%) 38.039% / 1) 100%, black 0% )"; else 
                 //ctx.font = `normal ${char.bold ? "700" : "500"} ${chars.fontSize * char.fontRem}px ${char.fontname}`;
-                path_y = y + max_ascender;
                 const path = char.font.getPath(
                     char.text,
                     line_x + w,
