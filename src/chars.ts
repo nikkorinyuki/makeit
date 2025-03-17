@@ -81,25 +81,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
             } else {
                 //if (char.fontRem == 0.8125) ctx.fillStyle = "color-mix( in oklab, hsl(228 calc(1 * 5.155%) 38.039% / 1) 100%, black 0% )"; else 
                 //ctx.font = `normal ${char.bold ? "700" : "500"} ${chars.fontSize * char.fontRem}px ${char.fontname}`;
-                if (char.text == "…" || char.text == "。" || char.text == "、") {
-                    path_y = y + line_height;
-                } else if (char.height.ascender < char.height.descender || char.text.match(/[.,]/)) {
-                    path_y = y + line_height * 0.8;
-                } else if (char.text.match(/[ー～]/)) {
-                    path_y = y + line_height / 2 + char.height.ascender;
-                }
-                if (char.fontname != "note_ja" && char.fontname != "note_ja_bold" && char.fontname != "note_en") {
-                    if (char.text.match(/[A-Z\-]/)) {
-                        path_y = yc2 + char.height.ascender;
-                    } else if (char.text.match(/[a-z]/)) {
-                        path_y = y + 15;
-                    }
-                } else {
-                    if (char.text == "…") {
-                        path_y += line_height * 0.3;
-                    }
-                }
-                path_y = y + max_ascender
+                path_y = y + max_ascender;
                 const path = char.font.getPath(
                     char.text,
                     line_x + w,
