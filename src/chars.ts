@@ -63,7 +63,8 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
             return sum + element;
         }, 0);
         const line_x = x + (width - line_width) / 2;
-        const line_height = line.length != 0 ? Math.max(...line.map(e => e.height.total)) : EnterCharHeight;
+        const line_height = line.length != 0 ? (Math.max(...line.map(e => e.height.ascender)) + Math.max(...line.map(e => e.height.descender))) : EnterCharHeight;
+        const max_ascender = line.length != 0 ? Math.max(...line.map(e => e.height.ascender)) : EnterCharHeight;
         let w = 0;
         for (const char of line) {
             if (char.text == " ") console.log(char.width, JSON.stringify(char.height));
@@ -84,7 +85,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                     path_y = y + line_height;
                 } else if (char.height.ascender < char.height.descender || char.text.match(/[.,]/)) {
                     path_y = y + line_height * 0.8;
-                }else if(char.text.match(/[ー～]/)){
+                } else if (char.text.match(/[ー～]/)) {
                     path_y = y + line_height / 2 + char.height.ascender;
                 }
                 if (char.fontname != "note_ja" && char.fontname != "note_ja_bold" && char.fontname != "note_en") {
@@ -98,6 +99,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                         path_y += line_height * 0.3;
                     }
                 }
+                path_y = y + max_ascender
                 const path = char.font.getPath(
                     char.text,
                     line_x + w,
@@ -309,7 +311,7 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
         const emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text));
         const scale = defaultscale * char.fontRem;
         const glyph = char.font.charToGlyph(char.text);
-        
+
         const charWidth = glyph.advanceWidth * scale;
         //const charHeight = (char.font.ascender - char.font.descender) * scale;//不正確
         const ascender = glyph.yMax ? glyph.yMax * scale : null;
@@ -329,7 +331,8 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
             lines.push([]);
         };
         lines[line].push(Object.assign(char, {
-            "width": (emoji == undefined ? charWidth : あcharHeight * scale), "height": {
+            "width": (emoji == undefined ? charWidth : あcharHeight * scale),
+            "height": {
                 "total": (emoji == undefined ? charHeight : あcharHeight * scale),
                 "ascender": (emoji == undefined ? ascender : あcharHeight * scale) ?? charHeight,
                 "descender": (emoji == undefined ? descender : 0) ?? 0,
@@ -339,7 +342,10 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
 
     const text = lines.map(e => e.map(ee => ee.text).join("")).join("\n");
     const totalWidth = Math.max(...lines.map(e => e.length == 0 ? 0 : (e.map(ee => ee.width).reduce((x, y) => x + y))));
-    const _height = lines.map(e => e.length == 0 ? (あcharHeight * defaultscale) : Math.max(...e.map(ee => ee.height.total))).reduce((x, y) => x + y);
+    const _height = lines.map(e =>
+        e.length == 0 ? (あcharHeight * defaultscale) : (Math.max(...e.map(ee => ee.height.ascender)) + Math.max(...e.map(ee => ee.height.descender)))
+    ).reduce((x, y) => x + y);
+    //ベースライン基準に各行の高さ求める
     const totalHeight = _height + ((lines.length - 1) * margin_bottom);
 
     return { text, totalWidth, totalHeight, lines };
