@@ -93,9 +93,9 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
                     chars.fontSize * char.fontRem,
                     {});
                 path.fill = char.color ?? "#000";
+
                 let char_svg = getAttributes(path.toSVG(2));
-                if (char.italic) char_svg.transform = "skewX(-15) scale(1, 1)";
-                char_svg["transform-origin"] = `${line_x + w + char.width / 2}px ${path_y - char.height.total / 2}px`;
+                
                 if (char.bold) char_svg.filter = "url(#bold)";
                 svg.push(`<path ${Object.keys(char_svg).map(e => `${e}="${char_svg[e]}"`).join(" ")} />`);
             }
