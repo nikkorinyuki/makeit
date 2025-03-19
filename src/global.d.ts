@@ -5,8 +5,8 @@ export { };
 
 declare global {
     var fonts: {
-        "note_ja": opentype.Font | null,
-        "note_ja_bold": opentype.Font | null,
+        "SourGummy-Thin": opentype.Font | null,
+        "PopGothicCjkJp-Regular": opentype.Font | null,
         "note_en": opentype.Font | null,
         "name": opentype.Font | null,
         "NotoSansJP-Medium": opentype.Font | null,

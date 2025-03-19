@@ -60,7 +60,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
         return sum + element;
     }, 0))) / (str.split("\n").length + 1);*/
     if (debug) console.log(margin_bottom);
-    const font = global.fonts["note_ja"];
+    const font = global.fonts["PopGothicCjkJp-Regular"];
     const EnterScale = (chars.fontSize) / font.unitsPerEm;
     const EnterCharHeight = (font.ascender - font.descender) * EnterScale;
     //y += margin_bottom;
@@ -168,11 +168,11 @@ interface char_option {
 const h1: char_option = { "fontRem": 1.5, "bold": true };
 const h2: char_option = { "fontRem": 1.25, "bold": true };
 const h3: char_option = { "fontRem": 1, "bold": true };
-const subtext: char_option = { "fontRem": 0.8125, "fonts": ["note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"] };
+const subtext: char_option = { "fontRem": 0.8125 };
 function markdown_to_chars(markdown_json: import("@khanacademy/simple-markdown").SingleASTNode[], option: char_option = {}): char[] {
     markdown_json = mergeObjects(markdown_json);
     const result: char[] = [];
-    option = Object.assign({ "fonts": ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false }, option);
+    option = Object.assign({ "fonts": ["SourGummy-Thin", "PopGothicCjkJp-Regular", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false } as char_option, option);
     for (let index = 0; index < markdown_json.length; index++) {
         const markdown = markdown_json[index];
         let _option: char_option = JSON.parse(JSON.stringify(option));
@@ -275,7 +275,7 @@ function get_best_font(char: string, fontFamily: (keyof typeof global.fonts)[] =
     for (const fontName of fontFamily) {
         const font = global.fonts[fontName];
         if (!font) throw new Error(String(fontName) + "フォントが見つかりませんでした。");
-        if (isCharacterSupported(font, char) && !(char.match(/\d/) && String(fontName).match("en"))) return { font, fontname: fontName };
+        if (isCharacterSupported(font, char)) return { font, fontname: fontName };
     }
     return { font: global.fonts[fontFamily[0]], fontname: fontFamily[0] };
 }
@@ -287,7 +287,7 @@ function isCharacterSupported(font: Font, char: string) {
 
 export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, option?: char_option, markdown = true, minFontSize = 1) {
     //メモ :見出し→太字 その他→標準 と扱う
-    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["note_ja_bold", "note_ja", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"]), "fontRem": 1, ...option } });
+    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["SourGummy-Thin", "PopGothicCjkJp-Regular", "note_en", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"]), "fontRem": 1, ...option } });
     chars.map(char => char.emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text) || e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase()));
     let fontSize = maxFontSize;
     while (true) {
@@ -307,7 +307,7 @@ export const margin_bottom = 10;
 function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: number) {
     let lines: char[][] = [];
     let line = 0;
-    const font = global.fonts["note_ja"];
+    const font = global.fonts["PopGothicCjkJp-Regular"];
     const あglyph = font.charToGlyph("あ");
     const あcharWidth = あglyph.advanceWidth;//使われなかった
     const あcharHeight = あglyph.yMax - あglyph.yMin;

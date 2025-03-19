@@ -9,8 +9,8 @@ import cors from '@fastify/cors'
 const fastify = require("fastify")({ logger: true, trustProxy: true });
 
 fastify.register(cors, {
-  // 全てのオリジンからのリクエストを許可
-  origin: "*",
+    // 全てのオリジンからのリクエストを許可
+    origin: "*",
 });
 const port = Number(process.env.PORT) || 3001;
 fastify.listen({ port, host: "0.0.0.0" }, (err, address) => {
@@ -22,8 +22,8 @@ fastify.listen({ port, host: "0.0.0.0" }, (err, address) => {
 });
 
 global.fonts = {
-    "note_ja": null,
-    "note_ja_bold": null,
+    "SourGummy-Thin": null,
+    "PopGothicCjkJp-Regular": null,
     "note_en": null,
     "name": null,
     "NotoSansJP-Medium": null,
