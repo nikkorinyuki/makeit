@@ -172,7 +172,7 @@ const subtext: char_option = { "fontRem": 0.8125 };
 function markdown_to_chars(markdown_json: import("@khanacademy/simple-markdown").SingleASTNode[], option: char_option = {}): char[] {
     markdown_json = mergeObjects(markdown_json);
     const result: char[] = [];
-    option = Object.assign({ "fonts": ["SourGummy-Thin", "PopGothicCjkJp-Regular",  "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false } as char_option, option);
+    option = Object.assign({ "fonts": ["SourGummy-Thin", "PopGothicCjkJp-Regular", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false } as char_option, option);
     for (let index = 0; index < markdown_json.length; index++) {
         const markdown = markdown_json[index];
         let _option: char_option = JSON.parse(JSON.stringify(option));
@@ -287,7 +287,7 @@ function isCharacterSupported(font: Font, char: string) {
 
 export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, option?: char_option, markdown = true, minFontSize = 1) {
     //メモ :見出し→太字 その他→標準 と扱う
-    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["SourGummy-Thin", "PopGothicCjkJp-Regular",  "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"]), "fontRem": 1, ...option } });
+    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["SourGummy-Thin", "PopGothicCjkJp-Regular", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium"]), "fontRem": 1, ...option } });
     chars.map(char => char.emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text) || e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase()));
     let fontSize = maxFontSize;
     while (true) {
@@ -346,9 +346,9 @@ function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: numb
 
     const text = lines.map(e => e.map(ee => ee.text).join("")).join("\n");
     const totalWidth = Math.max(...lines.map(e => e.length == 0 ? 0 : (e.map(ee => ee.width).reduce((x, y) => x + y))));
-    const _height = lines.map(e =>
+    const _height = (lines.length != 0 ? (lines.map(e =>
         e.length == 0 ? (あcharHeight * defaultscale) : (Math.max(...e.map(ee => ee.height.ascender)) + Math.max(...e.map(ee => ee.height.descender)))
-    ).reduce((x, y) => x + y);
+    )) : [0]).reduce((x, y) => x + y);
     //ベースライン基準に各行の高さ求める
     const totalHeight = _height + ((lines.length - 1) * margin_bottom);
 
