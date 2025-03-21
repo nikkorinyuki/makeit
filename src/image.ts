@@ -86,7 +86,7 @@ async function getBackground(direction: (`left` | `right`) = `left`, color: stri
     } else if (iconURL && iconURL.startsWith("data:")) {
         icon = iconURL;
     } else {
-        icon = "data:image/png;base64," + fs.readFileSync('./fonts/dummy_icon.png').toString('base64');
+        icon = "data:image/png;base64," + fs.readFileSync('./assets/dummy_icon.png').toString('base64');
     }
     const x = direction == "right" ? canvasWidth + circle_radius : -circle_radius;
     const y = canvasHeight * (3 / 4);

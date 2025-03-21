@@ -12,7 +12,7 @@ fastify.register(cors, {
     // 全てのオリジンからのリクエストを許可
     origin: "*",
 });
-const port = Number(process.env.PORT) || 3001;
+const port = Number(process.env.PORT) || 3000;
 fastify.listen({ port, host: "0.0.0.0" }, (err, address) => {
     if (err) {
         console.error(err);
@@ -30,7 +30,7 @@ global.fonts = {
 };
 for (const key in global.fonts) {
     const e = global.fonts[key] ?? "ttf";
-    global.fonts[key] = opentype.loadSync(`./fonts/${key}.${e}`);
+    global.fonts[key] = opentype.loadSync(`./assets/${key}.${e}`);
 
     console.log(key);
 }
