@@ -10,5 +10,6 @@ declare global {
         "NotoSansJP-Medium": opentype.Font | null,
         "NotoSansKR-Medium": opentype.Font | null,
         "NotoSansSC-Medium": opentype.Font | null,
+        "NotoSansMath-Regular": opentype.Font | null
     }
 }

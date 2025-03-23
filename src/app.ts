@@ -27,6 +27,7 @@ global.fonts = {
     "NotoSansJP-Medium": null,
     "NotoSansKR-Medium": null,
     "NotoSansSC-Medium": null,
+    "NotoSansMath-Regular": null
 };
 for (const key in global.fonts) {
     const e = global.fonts[key] ?? "ttf";
