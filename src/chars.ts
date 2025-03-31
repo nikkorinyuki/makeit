@@ -60,7 +60,7 @@ export async function fill_chars_center(chars: { lines: char[][], fontSize: numb
         return sum + element;
     }, 0))) / (str.split("\n").length + 1);*/
     if (debug) console.log(margin_bottom);
-    const font = global.fonts["PopGothicCjkJp-Regular"];
+    const font = global.fonts["PopGothicCjkJp-Bold"];
     const EnterScale = (chars.fontSize) / font.unitsPerEm;
     const EnterCharHeight = (font.ascender - font.descender) * EnterScale;
     //y += margin_bottom;
@@ -172,7 +172,7 @@ const subtext: char_option = { "fontRem": 0.8125 };
 function markdown_to_chars(markdown_json: import("@khanacademy/simple-markdown").SingleASTNode[], option: char_option = {}): char[] {
     markdown_json = mergeObjects(markdown_json);
     const result: char[] = [];
-    option = Object.assign({ "fonts": ["SourGummy-Thin", "PopGothicCjkJp-Regular", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false } as char_option, option);
+    option = Object.assign({ "fonts": ["SourGummy-Thin", "PopGothicCjkJp-Bold", "NotoSansCanadianAboriginal-Bold", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"], "fontRem": 1, "bold": false, "italic": false, "underline": false, "strikethrough": false, "code": false, "quote": false, "spoiler": false } as char_option, option);
     for (let index = 0; index < markdown_json.length; index++) {
         const markdown = markdown_json[index];
         let _option: char_option = JSON.parse(JSON.stringify(option));
@@ -282,12 +282,13 @@ function get_best_font(char: string, fontFamily: (keyof typeof global.fonts)[] =
 
 function isCharacterSupported(font: Font, char: string) {
     const glyph = font.charToGlyph(char);
+    console.log(char, font.names[0], glyph.name, glyph.unicodes.length);
     return glyph.name !== '.notdef' && glyph.unicodes.length !== 0;
 }
 
 export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, option?: char_option, markdown = true, minFontSize = 1) {
     //メモ :見出し→太字 その他→標準 と扱う
-    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["SourGummy-Thin", "PopGothicCjkJp-Regular", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"]), "fontRem": 1, ...option } });
+    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["SourGummy-Thin", "PopGothicCjkJp-Bold", "NotoSansCanadianAboriginal-Bold", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"]), "fontRem": 1, ...option } });
     chars.map(char => char.emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text) || e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase()));
     let fontSize = maxFontSize;
     while (true) {
@@ -307,7 +308,7 @@ export const margin_bottom = 10;
 function calculateTextDimensions(chars: char[], fontSize: number, maxWidth: number) {
     let lines: char[][] = [];
     let line = 0;
-    const font = global.fonts["PopGothicCjkJp-Regular"];
+    const font = global.fonts["PopGothicCjkJp-Bold"];
     const あglyph = font.charToGlyph("あ");
     const あcharWidth = あglyph.advanceWidth;//使われなかった
     const あcharHeight = あglyph.yMax - あglyph.yMin;

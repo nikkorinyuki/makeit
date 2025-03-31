@@ -27,8 +27,8 @@ export interface query {
 
 export async function generateImage(query: query) {
     const textX = query.direction == "right" ? margin / 2 : circle_radius + margin / 2;
-    const name = calc_best_size(query.name, maxTextWidth, canvasHeight, 20, { fonts: ["NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"], italic: true, color: query.tcolor ?? "#000" }, query.markdown, 20);
-    const id = calc_best_size(query.id, maxTextWidth, canvasHeight - name.totalHeight - margin_bottom, 20, { fonts: ["NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"], color: "#8F8F8F" }, query.markdown, 20);
+    const name = calc_best_size(query.name, maxTextWidth, canvasHeight, 20, { fonts: ["NotoSansCanadianAboriginal-Bold", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"], italic: true, color: query.tcolor ?? "#000" }, query.markdown, 20);
+    const id = calc_best_size(query.id, maxTextWidth, canvasHeight - name.totalHeight - margin_bottom, 20, { fonts: ["NotoSansCanadianAboriginal-Bold", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"], color: "#8F8F8F" }, query.markdown, 20);
     const text = calc_best_size(query.text, maxTextWidth, canvasHeight - name.totalHeight - id.totalHeight - margin_bottom * 2, 50, { color: query.tcolor ?? "#000" }, query.markdown);
     const totalHeight = text.totalHeight + name.totalHeight + id.totalHeight + margin_bottom * 2;
     const nikkorinyuki = calc_best_size("制作nikkorinyuki", maxTextWidth, canvasHeight, 15, { color: "#8F8F8F", fonts: ["NotoSansJP-Medium"] }, false, 15);

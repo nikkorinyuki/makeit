@@ -23,7 +23,8 @@ fastify.listen({ port, host: "0.0.0.0" }, (err, address) => {
 
 global.fonts = {
     "SourGummy-Thin": null,
-    "PopGothicCjkJp-Regular": null,
+    "PopGothicCjkJp-Bold": null,
+    "NotoSansCanadianAboriginal-Bold": null,
     "NotoSansJP-Medium": null,
     "NotoSansKR-Medium": null,
     "NotoSansSC-Medium": null,
