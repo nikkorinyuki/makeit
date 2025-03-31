@@ -57,6 +57,16 @@ APIエンドポイントにリクエストを送信して画像を生成しま�
 
 - `PORT`: サーバーがリスンするポート番号 (デフォルト: 3000)
 
+## 使用フォント
+
+- [NotoSansCanadianAboriginal-Bold](https://fonts.google.com/noto/specimen/Noto+Sans+Canadian+Aboriginal)
+- [NotoSansJP-Medium](https://fonts.google.com/noto/specimen/Noto+Sans+JP)
+- [NotoSansKR-Medium](https://fonts.google.com/noto/specimen/Noto+Sans+KR)
+- [NotoSansMath-Regular](https://fonts.google.com/noto/specimen/Noto+Sans+Math)
+- [NotoSansSC-Medium](https://fonts.google.com/noto/specimen/Noto+Sans+SC)
+- [PopGothicCjkJp-Bold](https://github.com/max32002/pop-gothic/blob/master/CJK%20JP/PopGothicCjkJp-Bold.ttf)
+- [SourGummy-Thin](https://fonts.google.com/specimen/Sour+Gummy)
+
 ## 貢献
 
 歓迎してます！！！
