@@ -282,7 +282,6 @@ function get_best_font(char: string, fontFamily: (keyof typeof global.fonts)[] =
 
 function isCharacterSupported(font: Font, char: string) {
     const glyph = font.charToGlyph(char);
-    console.log(char, font.names[0], glyph.name, glyph.unicodes.length);
     return glyph.name !== '.notdef' && glyph.unicodes.length !== 0;
 }
 
