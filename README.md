@@ -7,7 +7,7 @@
 ![](https://informalmakeitaquote.glitch.me/)
 このコードで稼働しているサーバー達※無料枠での稼働
 
-- [https://informalmakeitaquote.glitch.me/](https://informalmakeitaquote.glitch.me/)
+- ~~[https://informalmakeitaquote.glitch.me/](https://informalmakeitaquote.glitch.me/)~~
 - [https://makeit-a66a.onrender.com/](https://makeit-a66a.onrender.com/)
 
 # **⚠️注意** 
