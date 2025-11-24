@@ -286,19 +286,28 @@ function isCharacterSupported(font: Font, char: string) {
 }
 
 export function calc_best_size(text: string, width: number, height: number, maxFontSize: number, option?: char_option, markdown = true, minFontSize = 1) {
-    //メモ :見出し→太字 その他→標準 と扱う
-    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option.fonts ?? ["SourGummy-Thin", "PopGothicCjkJp-Bold", "NotoSansCanadianAboriginal-Bold", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"]), "fontRem": 1, ...option } });
+    // メモ :見出し→太字 その他→標準 と扱う
+    const chars: char[] = markdown ? markdown_to_chars(parse(text, 'extended'), option) : split(text).map(e => { return { "text": e, ...get_best_font(e, option?.fonts ?? ["SourGummy-Thin", "PopGothicCjkJp-Bold", "NotoSansCanadianAboriginal-Bold", "NotoSansJP-Medium", "NotoSansKR-Medium", "NotoSansSC-Medium", "NotoSansMath-Regular"]), "fontRem": 1, ...option } });
     chars.map(char => char.emoji = emojiData.find(e => e.unified.toUpperCase() === getCharUnified(char.text) || e.non_qualified?.toUpperCase() === getCharUnified(char.text) || e.unified.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase() || e.non_qualified?.toUpperCase() === char.text.charCodeAt(0).toString(16).toUpperCase()));
-    let fontSize = maxFontSize;
-    while (true) {
 
-        const { text, totalWidth, totalHeight, lines } = calculateTextDimensions(chars, fontSize, width);
+    // 二分探索で最適なフォントサイズを探索
+    let low = minFontSize;
+    let high = maxFontSize;
+    let best = minFontSize;
 
-        if ((totalWidth <= width && totalHeight <= height) || fontSize == minFontSize) {
-            return { text, fontSize, totalWidth, totalHeight, lines };
+    while (low <= high) {
+        const mid = Math.floor((low + high) / 2);
+        const { text: t, totalWidth, totalHeight, lines } = calculateTextDimensions(chars, mid, width);
+        if (totalWidth <= width && totalHeight <= height) {
+            best = mid; // mid は有効なのでさらに大きいサイズを試す
+            low = mid + 1;
+        } else {
+            high = mid - 1; // mid は大きすぎる
         }
-        fontSize--; // ステップを調整可能
     }
+
+    const { text: finalText, totalWidth, totalHeight, lines } = calculateTextDimensions(chars, best, width);
+    return { text: finalText, fontSize: best, totalWidth, totalHeight, lines };
 }
 
 export const margin_bottom = 10;
