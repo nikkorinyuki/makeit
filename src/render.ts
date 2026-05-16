@@ -21,29 +21,32 @@ import { findBestFontSize, LayoutResult } from "./fontsize";
 import { markdownToRuns, textToRuns } from "./runs";
 import { resolveStyle } from "./style";
 
-export async function render({
-    text = "Text",
-    icon,
-    name = "name",
-    id = "id",
-    debug = false,
-    markdown = true,
-    direction = "left",
-    color,
-    tcolor,
-    format
-}: {
-    text: string;
-    icon?: string;
-    name: string;
-    id: string;
-    debug: boolean;
-    markdown: boolean;
-    direction: `left` | `right`;
-    color: string;
-    tcolor?: string;
-    format: ExportFormat;
-}) {
+export async function render(
+    {
+        text = "Text",
+        icon,
+        name = "name",
+        id = "id",
+        debug = false,
+        markdown = true,
+        direction = "left",
+        color,
+        tcolor,
+        format
+    }: {
+        text: string;
+        icon?: string;
+        name: string;
+        id: string;
+        debug: boolean;
+        markdown: boolean;
+        direction: `left` | `right`;
+        color: string;
+        tcolor?: string;
+        format: ExportFormat;
+    },
+    signal?: AbortSignal
+) {
     const canvas = new Canvas(WIDTH, HEIGHT);
 
     const ctx = canvas.getContext("2d");
@@ -103,7 +106,8 @@ export async function render({
         name_font,
         { x: 0, y: 0, width: MAX_TEXT_WIDTH, height: HEIGHT }, //仮置き
         30,
-        30
+        30,
+        signal
     );
     const { layout: id_layout } = findBestFontSize(
         ctx,
@@ -112,7 +116,8 @@ export async function render({
         id_font,
         { x: 0, y: 0, width: MAX_TEXT_WIDTH, height: HEIGHT }, //仮置き
         30,
-        30
+        30,
+        signal
     );
     const { layout: nky_layout } = findBestFontSize(
         ctx,
@@ -121,7 +126,8 @@ export async function render({
         nky_font,
         { x: 0, y: 0, width: MAX_TEXT_WIDTH, height: HEIGHT }, //仮置き
         10,
-        10
+        10,
+        signal
     );
 
     const { layout: text_layout } = findBestFontSize(
@@ -135,7 +141,10 @@ export async function render({
             width: MAX_TEXT_WIDTH,
             height:
                 HEIGHT - name_layout.height - id_layout.height - TEXT_MARGIN * 2
-        }
+        },
+        undefined,
+        undefined,
+        signal
     );
 
     /*

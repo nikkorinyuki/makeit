@@ -8,5 +8,5 @@ export const MARGIN = 50;
 export const MAX_TEXT_WIDTH =
     WIDTH * (GOLDEN_RADIO / (1 + GOLDEN_RADIO)) - MARGIN;
 
-export const MIN_FONT = 18;
+export const MIN_FONT = 1;
 export const MAX_FONT = 80;

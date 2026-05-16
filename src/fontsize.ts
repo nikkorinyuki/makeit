@@ -46,7 +46,8 @@ export function findBestFontSize(
     fontFamilies: string[],
     contentBox: ContentBox,
     minFontSize = MIN_FONT,
-    maxFontSize = MAX_FONT
+    maxFontSize = MAX_FONT,
+    signal?: AbortSignal
 ) {
     let low = minFontSize;
     let high = maxFontSize;
@@ -55,6 +56,10 @@ export function findBestFontSize(
     let bestLayout: LayoutResult | null = null;
 
     while (low <= high) {
+        if(signal?.aborted) {
+            throw new Error("Font size search aborted");
+        }
+        
         const mid = (low + high) >> 1;
 
         const layout = layoutRuns(

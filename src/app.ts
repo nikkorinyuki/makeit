@@ -91,14 +91,17 @@ fastify.post<{ Body: FromSchema<typeof ValidationSchema> }>(
     "/",
     opts,
     async (request, reply) => {
-        const buffer = await render(request.body);
+        const abortController = new AbortController();
+        const { signal } = abortController;
+        request.raw.on("close", () => {
+            abortController.abort();
+        });
+        const buffer = await render(request.body, signal);
         reply.type(getMIME(request.body.format)).send(buffer);
     }
 );
 
-function getMIME(
-    format: ExportFormat
-) {
+function getMIME(format: ExportFormat) {
     switch (format) {
         case "png":
             return "image/png";
