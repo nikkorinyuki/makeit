@@ -93,8 +93,8 @@ fastify.post<{ Body: FromSchema<typeof ValidationSchema> }>(
     async (request, reply) => {
         const abortController = new AbortController();
         const { signal } = abortController;
-        request.raw.on("close", () => {
-            abortController.abort();
+        reply.raw.on("close", () => {
+            if (!reply.raw.writableEnded) abortController.abort();
         });
         const buffer = await render(request.body, signal);
         reply.type(getMIME(request.body.format)).send(buffer);
