@@ -9,6 +9,7 @@ import Fastify, {
 } from "fastify";
 import { IncomingMessage, ServerResponse } from "http";
 import { FromSchema } from "json-schema-to-ts";
+import { ExportFormat } from "skia-canvas";
 import { render } from "./render";
 
 const fastify = Fastify({ logger: true, trustProxy: true });
@@ -67,7 +68,7 @@ const ValidationSchema = {
         },
         format: {
             type: "string",
-            enum: ["png", "jpeg", "webp", "tiff", "avif", "svg", "raw"],
+            enum: ["png", "jpg", "jpeg", "webp", "raw", "pdf", "svg"],
             default: "png"
         }
     },
@@ -99,22 +100,21 @@ fastify.post<{ Body: FromSchema<typeof ValidationSchema> }>(
 );
 
 function getMIME(
-    format: "png" | "jpeg" | "webp" | "tiff" | "avif" | "svg" | "raw"
+    format: ExportFormat
 ) {
     switch (format) {
+        case "png":
+            return "image/png";
+        case "jpg":
         case "jpeg":
             return "image/jpeg";
         case "webp":
             return "image/webp";
-        case "tiff":
-            return "image/tiff";
-        case "avif":
-            return "image/avif";
-        case "svg":
-            return "image/svg+xml";
         case "raw":
             return "application/octet-stream";
-        default: //png
-            return "image/png";
+        case "pdf":
+            return "application/pdf";
+        case "svg":
+            return "image/svg+xml";
     }
 }

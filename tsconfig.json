@@ -1,10 +1,10 @@
 {
     "compilerOptions": {
-        "module": "commonjs",
-        "baseUrl": "./src",
+        "module": "nodenext",
+        "rootDir": "./src",
         "esModuleInterop": true,
         "target": "es2020",
-        "moduleResolution": "node",
+        "moduleResolution": "nodenext",
         "sourceMap": true,
         "outDir": "dist",
         "types": ["node"]

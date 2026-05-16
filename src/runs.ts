@@ -30,45 +30,38 @@ export function markdownToRuns(markdown: string): Run[] {
                 pushText(content, style);
                 break;
             case "heading":
-                if (node.level == 1) style = Object.assign(style, h1);
-                else if (node.level == 2) style = Object.assign(style, h2);
-                else if (node.level == 3) style = Object.assign(style, h3);
+                let newStyle: Partial<TextStyle> = {};
+                if (node.level == 1) newStyle = { ...style, ...h1 };
+                else if (node.level == 2) newStyle = { ...style, ...h2 };
+                else if (node.level == 3) newStyle = { ...style, ...h3 };
                 node.content.push({ type: "br" });
-                walk(node.content, style);
+                walk(node.content, newStyle);
                 break;
             case "subtext":
-                style = Object.assign(style, subtext);
                 node.content.push({ type: "br" });
-                walk(node.content, style);
+                walk(node.content, { ...style, ...subtext });
                 break;
             case "strong":
-                style.bold = true;
-                walk(node.content, style);
+                walk(node.content, { ...style, ...{ bold: true } });
                 break;
             case "em":
-                style.italic = true;
-                walk(node.content, style);
+                walk(node.content, { ...style, ...{ italic: true } });
                 break;
             case "underline":
-                style.underline = true;
-                walk(node.content, style);
+                walk(node.content, { ...style, ...{ underline: true } });
                 break;
             case "strikethrough":
-                style.strikethrough = true;
-                walk(node.content, style);
+                walk(node.content, { ...style, ...{ strikethrough: true } });
                 break;
             case "inlineCode":
             case "codeBlock":
-                style.code = true;
-                pushText(node.content, style);
+                pushText(node.content, { ...style, ...{ code: true } });
                 break;
             case "blockQuote":
-                style.quote = true;
-                walk(node.content, style);
+                walk(node.content, { ...style, ...{ quote: true } });
                 break;
             case "spoiler":
-                style.spoiler = true;
-                walk(node.content, style);
+                walk(node.content, { ...style, ...{ spoiler: true } });
                 break;
             case "br":
                 pushText("\n", style);
@@ -96,36 +89,16 @@ export function markdownToRuns(markdown: string): Run[] {
         style: Partial<TextStyle>,
         isEmoji = false
     ) {
-        let buffer = "";
-
-        for (const char of [...text]) {
-            if (isEmoji) {
-                if (buffer) {
-                    runs.push({
-                        type: "text",
-                        text: buffer,
-                        style
-                    });
-
-                    buffer = "";
-                }
-
-                runs.push({
-                    type: "emoji",
-                    emoji: char,
-                    style
-                });
-
-                continue;
-            }
-
-            buffer += char;
-        }
-
-        if (buffer) {
+        if (isEmoji) {
+            runs.push({
+                type: "emoji",
+                emoji: text,
+                style
+            });
+        } else {
             runs.push({
                 type: "text",
-                text: buffer,
+                text,
                 style
             });
         }

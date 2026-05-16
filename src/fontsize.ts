@@ -66,7 +66,6 @@ export function findBestFontSize(
             contentBox
         );
 
-        console.log(low, high, JSON.stringify(layout));
         if (
             layout.height <= contentBox.height &&
             layout.width <= contentBox.width
@@ -81,7 +80,7 @@ export function findBestFontSize(
     }
 
     return {
-        fontSize: bestSize,
+        baseFontSize: bestSize,
         layout: bestLayout!
     };
 }
@@ -98,6 +97,7 @@ function layoutRuns(
     fontFamilies: string[],
     contentBox: ContentBox
 ): LayoutResult {
+    const MARGIN = 5;
     const positioned: PositionedRun[] = [];
 
     let x = contentBox.x;
@@ -109,16 +109,12 @@ function layoutRuns(
         const lineRuns = positioned.filter((p) => p.line === line);
         const maxAscent = Math.max(...lineRuns.map((p) => p.ascent));
         const maxDescent = Math.max(...lineRuns.map((p) => p.descent));
-        const height = maxAscent + maxDescent;
+        const height = Math.max(0, maxAscent + maxDescent);
         lineRuns.forEach((p) => {
-            if (p.run.type === "text") {
-                p.y += maxAscent;
-            } else if (p.run.type === "emoji") {
-                p.y += 0; //上下中央に配置する
-            }
+            p.y += maxAscent;
         });
         y += height; //現在の行の高さ
-        y += 5; //MARGIN
+        y += MARGIN; //MARGIN
         line++;
     }
 
@@ -171,7 +167,7 @@ function layoutRuns(
             ) {
                 newline();
             }
-            if(part === "\n") {
+            if (part === "\n") {
                 newline();
             }
 
@@ -198,22 +194,33 @@ function layoutRuns(
     }
 
     newline();
-    const totalHeight = y - contentBox.y;
+    const totalHeight = y - contentBox.y - MARGIN; //最後のMARGINを引く
 
     const lineWidths = new Map<number, number>();
     for (const p of positioned) {
         lineWidths.set(p.line, (lineWidths.get(p.line) ?? 0) + p.width);
     }
+    const width = Math.max(0, ...lineWidths.values());
+
+    // 左右中央揃えにする
+    for (let l = 1; l <= line; l++) {
+        const lineWidth = lineWidths.get(l)!;
+        for (const p of positioned) {
+            if (p.line === l) {
+                p.x += (width - lineWidth) / 2;
+            }
+        }
+    }
 
     return {
         runs: positioned,
-        width: Math.max(0, ...lineWidths.values()),
+        width,
         height: totalHeight
     };
 }
 
 function splitText(text: string) {
-    return text.match(/\S+|\s+|./gu) ?? [];
+    return [...text];
 }
 
 function getEffectiveFontSize(

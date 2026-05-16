@@ -5,7 +5,7 @@ import { FontLibrary } from "skia-canvas";
 import { TextStyle } from "./type";
 
 export const fonts: { [key: string]: OFont | null } = {
-    "SourGummy-Thin": null,
+    "SourGummy-Regular": null,
     "PopGothicCjkJp-Bold": null,
     "NotoSansCanadianAboriginal-Bold": null,
     "NotoSansJP-Medium": null,
@@ -75,7 +75,7 @@ export class Font {
         this.variant = variant;
         this.weight = weight;
         this.lineHeight =
-            typeof lineHeight === "number" ? `${lineHeight}px` : lineHeight;
+        typeof lineHeight === "number" ? `${lineHeight}px` : lineHeight;
     }
 
     static getCanvasFont(
@@ -87,7 +87,7 @@ export class Font {
             family: fontFamilies,
             size: fontSize,
             style: style.italic ? "italic " : "",
-            weight: style.bold ? "bold" : ""
+            weight: style.bold ? "bold" : "normal",
         });
     }
 

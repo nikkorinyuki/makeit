@@ -1,10 +1,16 @@
 import { readFileSync } from "fs";
-import { Canvas, CanvasRenderingContext2D, Image } from "skia-canvas";
+import {
+    Canvas,
+    CanvasRenderingContext2D,
+    ExportFormat,
+    Image
+} from "skia-canvas";
 import {
     CIRCLE_RADIUS,
     GOLDEN_RADIO,
     HEIGHT,
     MARGIN,
+    MAX_FONT,
     MAX_TEXT_WIDTH,
     TEXT_MARGIN,
     WIDTH
@@ -36,7 +42,7 @@ export async function render({
     direction: `left` | `right`;
     color: string;
     tcolor?: string;
-    format: `png` | `jpeg` | `webp` | `tiff` | `avif` | `svg` | `raw`;
+    format: ExportFormat;
 }) {
     const canvas = new Canvas(WIDTH, HEIGHT);
 
@@ -75,9 +81,9 @@ export async function render({
         "NotoSansSC-Medium",
         "NotoSansMath-Regular"
     ];
-    const nky_font = ["NotoSansCanadianAboriginal-Bold"];
+    const nky_font = ["NotoSansJP-Medium"];
     const text_font = [
-        "SourGummy-Thin",
+        "SourGummy-Regular",
         "PopGothicCjkJp-Bold",
         "NotoSansCanadianAboriginal-Bold",
         "NotoSansJP-Medium",
@@ -114,8 +120,8 @@ export async function render({
         {},
         nky_font,
         { x: 0, y: 0, width: MAX_TEXT_WIDTH, height: HEIGHT }, //仮置き
-        20,
-        20
+        10,
+        10
     );
 
     const { layout: text_layout } = findBestFontSize(
@@ -136,6 +142,7 @@ export async function render({
     render
     */
 
+    //TODO:layoutがないとき(適切なサイズが見つからなかったとき)の対処を導入する
     const totalHeight =
         text_layout.height +
         name_layout.height +
@@ -157,7 +164,8 @@ export async function render({
                     : (MARGIN + MAX_TEXT_WIDTH - text_layout.width) / 2,
             y: text_y
         },
-        tcolor
+        tcolor,
+        debug
     );
     await drawText(
         ctx,
@@ -171,12 +179,13 @@ export async function render({
                     : (MARGIN + MAX_TEXT_WIDTH - name_layout.width) / 2,
             y: name_y
         },
-        tcolor
+        tcolor,
+        debug
     );
     await drawText(
         ctx,
         id_layout,
-        name_font,
+        id_font,
         {
             x:
                 direction === "left"
@@ -185,23 +194,22 @@ export async function render({
                     : (MARGIN + MAX_TEXT_WIDTH - id_layout.width) / 2,
             y: id_y
         },
-        "#8F8F8F"
+        "#8F8F8F",
+        debug
     );
     await drawText(
         ctx,
         nky_layout,
-        text_font,
+        nky_font,
         {
-            x:
-                direction === "left"
-                    ? WIDTH - TEXT_MARGIN - nky_layout.width
-                    : MARGIN,
-            y: HEIGHT - TEXT_MARGIN - nky_layout.height
+            x: direction === "left" ? WIDTH - nky_layout.width - 5 : 5,
+            y: HEIGHT - nky_layout.height
         },
-        "#8F8F8F"
+        "#8F8F8F",
+        debug
     );
 
-    await canvas.saveAs("./output.png");
+    return await canvas.toBuffer(format);
 }
 
 async function drawBackground(
@@ -252,8 +260,31 @@ async function drawText(
     fontFamilies: string[],
     offset: { x: number; y: number },
     color?: string,
-    debug = true
+    debug = false
 ) {
+    const lines = layout.runs.map((r) => r.line);
+    const uniqueLines = Array.from(new Set(lines));
+    const lineSizes: { x: number; y: number; width: number; height: number }[] =
+        [];
+    //debug時のみwidthは計算される
+
+    for (const line of uniqueLines) {
+        const lineRuns = layout.runs.filter((r) => r.line === line);
+        const minX = Math.min(...lineRuns.map((r) => r.x));
+        const maxX = debug
+            ? Math.max(...lineRuns.map((r) => r.x + r.width))
+            : 0;
+        const maxAscent = Math.max(...lineRuns.map((p) => p.ascent));
+        const maxDescent = Math.max(...lineRuns.map((p) => p.descent));
+        const height = Math.max(0, maxAscent + maxDescent);
+        lineSizes[line] = {
+            x: minX,
+            y: lineRuns[0].y - maxAscent,
+            width: maxX - minX,
+            height
+        };
+    }
+
     for (const positioned of layout.runs) {
         const run = positioned.run;
 
@@ -271,17 +302,17 @@ async function drawText(
             code bg
         */
 
-        if (style.backgroundColor) {
-            ctx.fillStyle = style.backgroundColor;
+        if (style.code) {
+            ctx.fillStyle = "#1e1e1e8e";
 
             ctx.fillRect(
-                positioned.x - 4 + offset.x,
+                positioned.x + offset.x,
 
-                positioned.y - positioned.fontSize + offset.y,
+                lineSizes[positioned.line].y + offset.y,
 
-                positioned.width + 8,
+                positioned.width,
 
-                positioned.fontSize * 1.25
+                lineSizes[positioned.line].height
             );
         }
 
@@ -289,15 +320,15 @@ async function drawText(
             quote line
         */
 
-        if (style.quote) {
-            ctx.fillStyle = "#5865f2";
+        if (style.quote && positioned.x === lineSizes[positioned.line].x) {
+            ctx.fillStyle = "#1e1e1e";
 
             ctx.fillRect(
-                positioned.x - 10 + offset.x,
-                positioned.y - positioned.fontSize + offset.y,
+                positioned.x - 3 + offset.x,
+                lineSizes[positioned.line].y + offset.y,
 
-                4,
-                positioned.height
+                5,
+                lineSizes[positioned.line].height
             );
         }
 
@@ -305,6 +336,14 @@ async function drawText(
             text
         */
 
+        if (style.italic) {
+            // 斜体はtransformで傾けて表現する
+            // 斜体の基準位置に移動してから傾ける
+            // 絵文字を曲げるべきかは要検討
+            ctx.save();
+            ctx.translate(positioned.x + offset.x, positioned.y + offset.y);
+            ctx.transform(1, 0, Math.tan((-15 * Math.PI) / 180), 1, 0, 0);
+        }
         if (run.type === "emoji") {
             const image = await getEmojiImage(run.emoji);
 
@@ -312,9 +351,11 @@ async function drawText(
                 ctx.drawImage(
                     image,
 
-                    positioned.x + offset.x,
+                    style.italic ? 0 : positioned.x + offset.x,
 
-                    positioned.y + offset.y,
+                    style.italic
+                        ? -positioned.ascent
+                        : positioned.y + offset.y - positioned.ascent, //絵文字のbaselineはtopなのでyからascentを引く
 
                     positioned.width,
                     positioned.height
@@ -323,12 +364,26 @@ async function drawText(
         } else {
             ctx.fillStyle = style.color ?? color ?? "#000";
 
+            if (style.bold) {
+                //太字は同じテキストの縁を描画して表現する
+                ctx.lineWidth = 2 * (positioned.fontSize / MAX_FONT);
+                ctx.strokeStyle = ctx.fillStyle.toString();
+                ctx.strokeText(
+                    run.text,
+                    style.italic ? 0 : positioned.x + offset.x,
+                    style.italic ? 0 : positioned.y + offset.y
+                );
+            }
+
             ctx.textBaseline = "alphabetic";
             ctx.fillText(
                 run.text,
-                positioned.x + offset.x,
-                positioned.y + offset.y
+                style.italic ? 0 : positioned.x + offset.x,
+                style.italic ? 0 : positioned.y + offset.y
             );
+        }
+        if (style.italic) {
+            ctx.restore();
         }
 
         /*
@@ -336,15 +391,16 @@ async function drawText(
         */
 
         if (style.spoiler) {
-            ctx.fillStyle = "oklab(0.618397, 0.00218117, -0.0117887)";
+            ctx.fillStyle = "#1e1e1efb";
 
             ctx.fillRect(
                 positioned.x + offset.x,
-                positioned.y - positioned.ascent + offset.y,
+
+                lineSizes[positioned.line].y + offset.y,
 
                 positioned.width,
 
-                positioned.height
+                lineSizes[positioned.line].height
             );
         }
 
@@ -356,7 +412,10 @@ async function drawText(
             ctx.fillRect(
                 positioned.x + offset.x,
 
-                positioned.y + positioned.ascent + offset.y,
+                lineSizes[positioned.line].y +
+                    lineSizes[positioned.line].height -
+                    5 +
+                    offset.y,
 
                 positioned.width,
 
@@ -372,7 +431,9 @@ async function drawText(
             ctx.fillRect(
                 positioned.x + offset.x,
 
-                positioned.y + positioned.ascent / 2 + offset.y,
+                lineSizes[positioned.line].y +
+                    lineSizes[positioned.line].height / 2 +
+                    offset.y,
 
                 positioned.width,
 
@@ -380,7 +441,23 @@ async function drawText(
             );
         }
 
-        if (run.type === "text" && debug) {
+        /*
+            debug
+        */
+
+        if (debug) {
+            ctx.strokeStyle = "lightgreen";
+            for (const line of uniqueLines) {
+                ctx.strokeRect(
+                    lineSizes[line].x + offset.x,
+                    lineSizes[line].y + offset.y,
+                    lineSizes[line].width,
+                    lineSizes[line].height
+                );
+            }
+            ctx.strokeStyle = "green";
+            ctx.strokeRect(offset.x, offset.y, layout.width, layout.height);
+
             ctx.strokeStyle = "red";
             ctx.strokeRect(
                 positioned.x + offset.x,
@@ -407,56 +484,7 @@ async function drawText(
                 positioned.width,
                 0
             );
-        } else if (run.type === "emoji" && debug) {
-            //絵文字のbaselineはtopなのでずらす
-            ctx.strokeStyle = "red";
-            ctx.strokeRect(
-                positioned.x + offset.x,
-                positioned.y + offset.y,
-                positioned.width,
-                0
-            );
-            ctx.strokeRect(
-                positioned.x + offset.x,
-                positioned.y + offset.y,
-                0,
-                positioned.height
-            );
-            ctx.strokeStyle = "blue";
-            ctx.strokeRect(
-                positioned.x + offset.x,
-                positioned.y + offset.y + positioned.height,
-                positioned.width,
-                0
-            );
-            ctx.strokeRect(
-                positioned.x + offset.x,
-                positioned.y + offset.y + positioned.height / 2,
-                positioned.width,
-                0
-            );
         }
-    }
-    if (debug) {
-        ctx.strokeStyle = "lightgreen";
-        const lines = layout.runs.map((r) => r.line);
-        const uniqueLines = Array.from(new Set(lines));
-        for (const line of uniqueLines) {
-            const lineRuns = layout.runs.filter((r) => r.line === line);
-            const minX = Math.min(...lineRuns.map((r) => r.x));
-            const maxX = Math.max(...lineRuns.map((r) => r.x + r.width));
-            const maxAscent = Math.max(...lineRuns.map((p) => p.ascent));
-            const maxDescent = Math.max(...lineRuns.map((p) => p.descent));
-            const height = maxAscent + maxDescent;
-            ctx.strokeRect(
-                minX + offset.x,
-                lineRuns[0].y - maxAscent + offset.y,
-                maxX - minX,
-                height
-            );
-        }
-        ctx.strokeStyle = "green";
-        ctx.strokeRect(offset.x, offset.y, layout.width, layout.height);
     }
 }
 
@@ -486,8 +514,7 @@ export function getCharUnified(emoji: string, nonQualified = true, join = "-") {
 function colorToRGBA(ctx: CanvasRenderingContext2D, color: string, alpha = 1) {
     ctx.fillStyle = color;
 
-    const computed = ctx.fillStyle as string;
-    //TODO:CanvasTextureになるか確認
+    const computed = ctx.fillStyle.toString();
 
     // #rgb / #rrggbb
     if (computed.startsWith("#")) {
