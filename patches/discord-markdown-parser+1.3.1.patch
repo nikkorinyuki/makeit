@@ -1,0 +1,40 @@
+diff --git a/node_modules/discord-markdown-parser/dist/simple-markdown/index.d.ts b/node_modules/discord-markdown-parser/dist/simple-markdown/index.d.ts
+index 11ed57b..6d369d1 100644
+--- a/node_modules/discord-markdown-parser/dist/simple-markdown/index.d.ts
++++ b/node_modules/discord-markdown-parser/dist/simple-markdown/index.d.ts
+@@ -56,21 +56,23 @@ type ArrayRule = {
+ };
+ type ParserRules = {
+     readonly Array?: ArrayRule;
+-    readonly [type: string]: ParserRule;
++    readonly [type: string]: ParserRule | ArrayRule | undefined;
+ };
+ type OutputRules<Rule> = {
+     readonly Array?: ArrayRule;
+-    readonly [type: string]: Rule;
++    readonly [type: string]: Rule | ArrayRule | undefined;
+ };
+ type Rules<OutputRule> = {
+     readonly Array?: ArrayRule;
+-    readonly [type: string]: ParserRule & OutputRule;
++    readonly [type: string]: ParserRule & OutputRule  | ArrayRule | undefined;
+ };
+ type HtmlRules = {
+     readonly Array?: {
+         readonly html: ArrayNodeOutput<string>;
+     };
+-    readonly [type: string]: ParserRule & HtmlOutputRule;
++    readonly [type: string]: ParserRule & HtmlOutputRule | {
++        readonly html: ArrayNodeOutput<string>;
++    } | undefined;
+ };
+ type NonNullHtmlOutputRule = {
+     readonly html: HtmlNodeOutput;
+@@ -145,6 +147,6 @@ type Exports = {
+      */
+     readonly defaultOutput: (...args: any[]) => any;
+ };
+-export type { State, Parser, Output, HtmlOutput, Capture, MatchFunction, ParseFunction, NodeOutput, ArrayNodeOutput, ParserRule, HtmlOutputRule, ParserRules, OutputRules, Rules, HtmlRules, SingleASTNode, };
++export type { ArrayNodeOutput, Capture, HtmlOutput, HtmlOutputRule, HtmlRules, MatchFunction, NodeOutput, Output, OutputRules, ParseFunction, Parser, ParserRule, ParserRules, Rules, SingleASTNode, State };
+ declare var SimpleMarkdown: Exports;
+ export default SimpleMarkdown;

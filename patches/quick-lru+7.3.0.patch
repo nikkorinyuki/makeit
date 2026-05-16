@@ -1,0 +1,28 @@
+diff --git a/node_modules/quick-lru/index.d.ts b/node_modules/quick-lru/index.d.ts
+index 3e8ac46..34b3c10 100644
+--- a/node_modules/quick-lru/index.d.ts
++++ b/node_modules/quick-lru/index.d.ts
+@@ -52,7 +52,7 @@ export default class QuickLRU<KeyType, ValueType> extends Map<KeyType, ValueType
+ 	*/
+ 	constructor(options: Options<KeyType, ValueType>);
+ 
+-	[Symbol.iterator](): IterableIterator<[KeyType, ValueType]>;
++	[Symbol.iterator](): MapIterator<[KeyType, ValueType]>;
+ 
+ 	/**
+ 	Set an item. Returns the instance.
+@@ -131,12 +131,12 @@ export default class QuickLRU<KeyType, ValueType> extends Map<KeyType, ValueType
+ 	/**
+ 	Iterable for all the keys.
+ 	*/
+-	keys(): IterableIterator<KeyType>;
++	keys(): MapIterator<KeyType>;
+ 
+ 	/**
+ 	Iterable for all the values.
+ 	*/
+-	values(): IterableIterator<ValueType>;
++	values(): MapIterator<ValueType>;
+ 
+ 	/**
+ 	Iterable for all entries, starting with the oldest (ascending in recency).
