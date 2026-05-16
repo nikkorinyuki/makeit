@@ -4,52 +4,52 @@
 
 ## 例
 
-![](https://makeit-a66a.onrender.com/)
+![](assets/sample.png)
 このコードで稼働しているサーバー達※無料枠での稼働
 
 - [https://makeit-a66a.onrender.com/](https://makeit-a66a.onrender.com/)
 
-# **⚠️注意** 
-動作確認は `node v16.12` で行っています。
+# 動作確認環境
+
+- node: `v24.15.0`
+- yarn: `v1.22.22`
 
 ## 使い方
 
 以下のコマンドを実行して依存関係をインストールします。
 
 ```bash
-npm install
+yarn
 ```
 
 サーバーを起動するには、以下のコマンドを実行します。
 
 ```bash
-npm start
+yarn start
 ```
 
-APIエンドポイントにリクエストを送信して画像を生成します。
+POSTリクエストを`http://localhost:3000/`に送信する。
 
-- ブラウザ等で[`http://localhost:3000/`](http://localhost:3000/)にアクセスする。(GET)
+```bash
+curl -X POST -H "Content-Type: application/json" -d "{\"text\": \"Hello, World!\",\"name\":\"\",\"id\":\"\"}" --output makeit.png http://localhost:3000/
+```
 
-- POSTリクエストを`http://localhost:3000/`に送信する。
-   ```bash
-   curl -X POST -H "Content-Type: application/json" -d "{\"text\": \"Hello, World!\",\"name\":\"\",\"id\":\"\"}" --output makeit.png http://localhost:3000/
-   ```
-   ※makeit.pngに画像が保存されます
+※makeit.pngに画像が保存されます
 
 ## API パラメータ一覧
 
-| フィールド | 型      | POST | GET  | 任意の場合の初期値                             | 説明                                                       |
-| ---------- | ------- | ---- | ---- | ---------------------------------------------- | ---------------------------------------------------------- |
-| text       | string  | 必須 | 任意 | "Text"                                         | テキスト                                                   |
-| icon       | string  | 任意 | 任意 | [assets/dummy_icon.png](assets/dummy_icon.png) | アイコンのURLもしくはdataURL                               |
-| name       | string  | 必須 | 任意 | "name"                                         | テキストの下に表示されます                                 |
-| id         | string  | 必須 | 任意 | "id"                                           | 名前の下に表示されます                                     |
-| debug      | boolean | 任意 | 任意 | false                                          | デバッグモードのフラグ                                     |
-| markdown   | boolean | 任意 | 任意 | true                                           | Discordマークダウンにそって描画するか                      |
-| direction  | string  | 任意 | 任意 | "left"                                         | テキストの方向（left, right）                              |
-| color      | string  | 任意 | 任意 | "white"                                        | 背景色                                                     |
-| tcolor     | string  | 任意 | 任意 | "black"                                        | テキストカラー                                             |
-| format     | string  | 任意 | 任意 | "png"                                          | 画像フォーマット （png, jpeg, webp, tiff, avif, svg, raw） |
+| フィールド | 型      | 初期値                                         | 説明                                                     |
+| ---------- | ------- | ---------------------------------------------- | -------------------------------------------------------- |
+| text       | string  | "Text"                                         | テキスト                                                 |
+| icon       | string  | [assets/dummy_icon.png](assets/dummy_icon.png) | アイコンのURLもしくはdataURL                             |
+| name       | string  | "name"                                         | テキストの下に表示されます                               |
+| id         | string  | "id"                                           | 名前の下に表示されます                                   |
+| debug      | boolean | false                                          | デバッグモードのフラグ                                   |
+| markdown   | boolean | true                                           | Discordマークダウンにそって描画するか                    |
+| direction  | string  | "left"                                         | テキストの方向（left, right）                            |
+| color      | string  | "white"                                        | 背景色                                                   |
+| tcolor     | string  | "black"                                        | テキストカラー                                           |
+| format     | string  | "png"                                          | 画像フォーマット （png, jpg, jpeg, webp, raw, pdf, svg） |
 
 ## 環境変数
 

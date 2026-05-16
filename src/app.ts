@@ -29,7 +29,6 @@ fastify.listen({ port, host: "0.0.0.0" }, (err, address) => {
 
 const ValidationSchema = {
     type: "object",
-    required: ["text", "name", "id"],
     properties: {
         debug: {
             type: "boolean",
@@ -37,7 +36,7 @@ const ValidationSchema = {
         },
         markdown: {
             type: "boolean",
-            default: false
+            default: true
         },
         direction: {
             type: "string",
@@ -58,13 +57,11 @@ const ValidationSchema = {
         },
         color: {
             type: "string",
-            default: "#fff",
-            pattern: "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+            default: "#fff"
         },
         tcolor: {
             type: "string",
-            default: "#000",
-            pattern: "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+            default: "#000"
         },
         format: {
             type: "string",
