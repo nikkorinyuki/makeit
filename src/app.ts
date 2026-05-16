@@ -30,6 +30,9 @@ fastify.listen({ port, host: "0.0.0.0" }, (err, address) => {
 const ValidationSchema = {
     type: "object",
     properties: {
+        icon:{
+            type: "string"
+        },
         debug: {
             type: "boolean",
             default: false

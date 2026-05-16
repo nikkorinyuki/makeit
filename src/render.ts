@@ -227,7 +227,8 @@ async function drawBackground(
     color: string = "white",
     iconURL?: string
 ) {
-    const image = new Image(iconURL ?? readFileSync("./assets/dummy_icon.png"));
+    const image = new Image();
+    image.src = iconURL || "./assets/dummy_icon.png";
     await image.decode();
 
     const x = direction == "right" ? WIDTH + CIRCLE_RADIUS : -CIRCLE_RADIUS;
