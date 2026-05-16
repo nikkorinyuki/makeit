@@ -15,8 +15,13 @@ type ContentBox = {
 type PositionedRun = {
     run: Run;
 
+    //左上基準(行ごとにyは固定←あとからbaselineを考慮して描画される)
     x: number;
     y: number;
+
+    ascent: number;
+    descent: number;
+
     line: number;
     width: number;
     height: number;
@@ -101,9 +106,18 @@ function layoutRuns(
 
     function newline() {
         x = contentBox.x;
-        y += Math.max(
-            ...positioned.filter((p) => p.line == line).map((p) => p.height)
-        ); //現在の行の最大高さを取得する
+        const lineRuns = positioned.filter((p) => p.line === line);
+        const maxAscent = Math.max(...lineRuns.map((p) => p.ascent));
+        const maxDescent = Math.max(...lineRuns.map((p) => p.descent));
+        const height = maxAscent + maxDescent;
+        lineRuns.forEach((p) => {
+            if (p.run.type === "text") {
+                p.y += maxAscent;
+            } else if (p.run.type === "emoji") {
+                p.y += 0; //上下中央に配置する
+            }
+        });
+        y += height; //現在の行の高さ
         y += 5; //MARGIN
         line++;
     }
@@ -127,6 +141,8 @@ function layoutRuns(
 
                 x,
                 y,
+                ascent: size * 0.9,
+                descent: size * 0.1,
                 line,
                 width: size,
                 height: size,
@@ -143,13 +159,19 @@ function layoutRuns(
 
         for (const part of parts) {
             const measure = measureTextCached(ctx, part, maxFont);
-            const width = measure[0] * (fontSize / MAX_FONT);
-            const height = measure[1] * (fontSize / MAX_FONT);
+            const width = measure.width * (fontSize / MAX_FONT);
+            const height =
+                (measure.actualBoundingBoxAscent +
+                    measure.actualBoundingBoxDescent) *
+                (fontSize / MAX_FONT);
 
             if (
                 x + width > contentBox.x + contentBox.width &&
                 x !== contentBox.x
             ) {
+                newline();
+            }
+            if(part === "\n") {
                 newline();
             }
 
@@ -161,6 +183,9 @@ function layoutRuns(
 
                 x,
                 y,
+                ascent: measure.actualBoundingBoxAscent * (fontSize / MAX_FONT),
+                descent:
+                    measure.actualBoundingBoxDescent * (fontSize / MAX_FONT),
                 line,
                 width,
                 height,
@@ -202,7 +227,7 @@ function getEffectiveFontSize(
    MEASURE
 ========================================================= */
 
-const measureCache = new QuickLRU<string, [number, number]>({
+const measureCache = new QuickLRU<string, TextMetrics>({
     maxSize: 50000
 });
 
@@ -224,11 +249,8 @@ function measureTextCached(
     ctx.font = font.toString();
 
     const measure = ctx.measureText(text);
-    const width = measure.width;
-    const height =
-        measure.actualBoundingBoxAscent + measure.actualBoundingBoxDescent;
 
-    measureCache.set(key, [width, height]);
+    measureCache.set(key, measure);
 
-    return [width, height];
+    return measure;
 }

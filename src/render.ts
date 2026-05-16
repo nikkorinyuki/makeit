@@ -323,7 +323,7 @@ async function drawText(
         } else {
             ctx.fillStyle = style.color ?? color ?? "#000";
 
-            ctx.textBaseline = "top";
+            ctx.textBaseline = "alphabetic";
             ctx.fillText(
                 run.text,
                 positioned.x + offset.x,
@@ -340,11 +340,11 @@ async function drawText(
 
             ctx.fillRect(
                 positioned.x + offset.x,
-                positioned.y - positioned.fontSize + offset.y,
+                positioned.y - positioned.ascent + offset.y,
 
                 positioned.width,
 
-                positioned.fontSize * 1.2
+                positioned.height
             );
         }
 
@@ -356,7 +356,7 @@ async function drawText(
             ctx.fillRect(
                 positioned.x + offset.x,
 
-                positioned.y + positioned.height + offset.y,
+                positioned.y + positioned.ascent + offset.y,
 
                 positioned.width,
 
@@ -372,7 +372,7 @@ async function drawText(
             ctx.fillRect(
                 positioned.x + offset.x,
 
-                positioned.y + positioned.height / 2 + offset.y,
+                positioned.y + positioned.ascent / 2 + offset.y,
 
                 positioned.width,
 
@@ -380,7 +380,35 @@ async function drawText(
             );
         }
 
-        if (debug) {
+        if (run.type === "text" && debug) {
+            ctx.strokeStyle = "red";
+            ctx.strokeRect(
+                positioned.x + offset.x,
+                positioned.y + offset.y - positioned.ascent,
+                positioned.width,
+                0
+            );
+            ctx.strokeRect(
+                positioned.x + offset.x,
+                positioned.y + offset.y - positioned.ascent,
+                0,
+                positioned.height
+            );
+            ctx.strokeStyle = "blue";
+            ctx.strokeRect(
+                positioned.x + offset.x,
+                positioned.y + offset.y,
+                positioned.width,
+                0
+            );
+            ctx.strokeRect(
+                positioned.x + offset.x,
+                positioned.y + offset.y + positioned.descent,
+                positioned.width,
+                0
+            );
+        } else if (run.type === "emoji" && debug) {
+            //絵文字のbaselineはtopなのでずらす
             ctx.strokeStyle = "red";
             ctx.strokeRect(
                 positioned.x + offset.x,
@@ -401,7 +429,34 @@ async function drawText(
                 positioned.width,
                 0
             );
+            ctx.strokeRect(
+                positioned.x + offset.x,
+                positioned.y + offset.y + positioned.height / 2,
+                positioned.width,
+                0
+            );
         }
+    }
+    if (debug) {
+        ctx.strokeStyle = "lightgreen";
+        const lines = layout.runs.map((r) => r.line);
+        const uniqueLines = Array.from(new Set(lines));
+        for (const line of uniqueLines) {
+            const lineRuns = layout.runs.filter((r) => r.line === line);
+            const minX = Math.min(...lineRuns.map((r) => r.x));
+            const maxX = Math.max(...lineRuns.map((r) => r.x + r.width));
+            const maxAscent = Math.max(...lineRuns.map((p) => p.ascent));
+            const maxDescent = Math.max(...lineRuns.map((p) => p.descent));
+            const height = maxAscent + maxDescent;
+            ctx.strokeRect(
+                minX + offset.x,
+                lineRuns[0].y - maxAscent + offset.y,
+                maxX - minX,
+                height
+            );
+        }
+        ctx.strokeStyle = "green";
+        ctx.strokeRect(offset.x, offset.y, layout.width, layout.height);
     }
 }
 
