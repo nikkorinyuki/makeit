@@ -408,7 +408,7 @@ async function drawText(
 
                 lineSizes[positioned.line].y + offset.y,
 
-                positioned.width,
+                positioned.width+1,
 
                 lineSizes[positioned.line].height
             );
