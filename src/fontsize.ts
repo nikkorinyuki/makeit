@@ -240,7 +240,7 @@ function getEffectiveFontSize(
 ========================================================= */
 
 const measureCache = new QuickLRU<string, TextMetrics>({
-    maxSize: 10000
+    maxSize: 1000
 });
 
 function measureTextCached(
