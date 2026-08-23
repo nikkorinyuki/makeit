@@ -656,6 +656,7 @@ async function drawText(
     }
 
     if (debugMetrics && debug) {
+        const debugMetricsStart = nowMs();
         debugMetrics.push({
             label: `drawText:${metricLabel}:lineLayout`,
             ms: lineLayoutMs
@@ -679,6 +680,10 @@ async function drawText(
         debugMetrics.push({
             label: `drawText:${metricLabel}:debugGuide`,
             ms: debugGuideMs
+        });
+        debugMetrics.push({
+            label: `drawText:${metricLabel}:debugMetrics`,
+            ms: nowMs() - debugMetricsStart
         });
         debugMetrics.push({
             label: `drawText:${metricLabel}:total`,
