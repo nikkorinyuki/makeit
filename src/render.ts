@@ -21,6 +21,75 @@ import { findBestFontSize, LayoutResult } from "./fontsize";
 import { markdownToRuns, textToRuns } from "./runs";
 import { resolveStyle } from "./style";
 
+type DebugMetric = {
+    label: string;
+    ms: number;
+};
+
+function nowMs() {
+    return performance.now();
+}
+
+function pushMetric(metrics: DebugMetric[] | null, label: string, start: number) {
+    if (!metrics) return;
+    metrics.push({ label, ms: nowMs() - start });
+}
+
+function drawDebugTimings(ctx: CanvasRenderingContext2D, metrics: DebugMetric[]) {
+    if (metrics.length === 0) return;
+
+    const lines = metrics.map(
+        (metric) => `${metric.label.padEnd(16, " ")}: ${metric.ms.toFixed(2)} ms`
+    );
+
+    ctx.save();
+    ctx.font = "14px NotoSansJP-Medium";
+    ctx.textBaseline = "top";
+
+    const startX = 10;
+    const startY = 10;
+    const paddingX = 8;
+    const paddingY = 4;
+    const lineHeight = 18;
+
+    const maxOverlayHeight = HEIGHT - startY * 2;
+    const rowsPerColumn = Math.max(
+        1,
+        Math.floor((maxOverlayHeight - paddingY * 2) / lineHeight)
+    );
+
+    const columns: string[][] = [];
+    for (let i = 0; i < lines.length; i += rowsPerColumn) {
+        columns.push(lines.slice(i, i + rowsPerColumn));
+    }
+
+    const columnWidths = columns.map((column) =>
+        column.reduce((max, line) => Math.max(max, ctx.measureText(line).width), 0)
+    );
+
+    const columnGap = 12;
+    const boxWidth =
+        columnWidths.reduce((sum, width) => sum + width + paddingX * 2, 0) +
+        columnGap * Math.max(0, columns.length - 1);
+    const maxColumnRows = Math.max(...columns.map((column) => column.length));
+    const boxHeight = maxColumnRows * lineHeight + paddingY * 2;
+
+    ctx.fillStyle = "rgba(0, 0, 0, 0.72)";
+    ctx.fillRect(startX, startY, boxWidth, boxHeight);
+
+    ctx.fillStyle = "#6CFF8F";
+    let currentX = startX;
+    columns.forEach((column, columnIndex) => {
+        const textX = currentX + paddingX;
+        column.forEach((line, rowIndex) => {
+            ctx.fillText(line, textX, startY + paddingY + lineHeight * rowIndex);
+        });
+        currentX += columnWidths[columnIndex] + paddingX * 2 + columnGap;
+    });
+
+    ctx.restore();
+}
+
 export async function render(
     {
         text = "Text",
@@ -47,6 +116,9 @@ export async function render(
     },
     signal?: AbortSignal
 ) {
+    const renderStart = nowMs();
+    const debugMetrics: DebugMetric[] | null = debug ? [] : null;
+
     const canvas = new Canvas(WIDTH, HEIGHT);
 
     const ctx = canvas.getContext("2d");
@@ -55,16 +127,20 @@ export async function render(
     background
   */
 
+    const backgroundStart = nowMs();
     await drawBackground(ctx, direction, color, icon);
+    pushMetric(debugMetrics, "background", backgroundStart);
 
     /*
     parse
     */
 
+    const parseStart = nowMs();
     const name_runs = textToRuns(name);
     const id_runs = textToRuns(id);
     const nky_runs = textToRuns("Powered by nikkorinyuki/makeit");
     const text_runs = markdown ? markdownToRuns(text) : textToRuns(text);
+    pushMetric(debugMetrics, "parse", parseStart);
 
     /*
     font 
@@ -99,6 +175,7 @@ export async function render(
     auto fit
     */
 
+    const nameFitStart = nowMs();
     const { layout: name_layout } = findBestFontSize(
         ctx,
         name_runs,
@@ -109,6 +186,9 @@ export async function render(
         30,
         signal
     );
+    pushMetric(debugMetrics, "fit:name", nameFitStart);
+
+    const idFitStart = nowMs();
     const { layout: id_layout } = findBestFontSize(
         ctx,
         id_runs,
@@ -119,6 +199,9 @@ export async function render(
         30,
         signal
     );
+    pushMetric(debugMetrics, "fit:id", idFitStart);
+
+    const nkyFitStart = nowMs();
     const { layout: nky_layout } = findBestFontSize(
         ctx,
         nky_runs,
@@ -129,7 +212,9 @@ export async function render(
         10,
         signal
     );
+    pushMetric(debugMetrics, "fit:credit", nkyFitStart);
 
+    const textFitStart = nowMs();
     const { layout: text_layout } = findBestFontSize(
         ctx,
         text_runs,
@@ -146,6 +231,7 @@ export async function render(
         undefined,
         signal
     );
+    pushMetric(debugMetrics, "fit:text", textFitStart);
 
     /*
     render
@@ -161,6 +247,7 @@ export async function render(
     const name_y = text_y + text_layout.height + TEXT_MARGIN;
     const id_y = name_y + name_layout.height + TEXT_MARGIN;
 
+    const drawTextMainStart = nowMs();
     await drawText(
         ctx,
         text_layout,
@@ -174,8 +261,13 @@ export async function render(
             y: text_y
         },
         tcolor,
-        debug
+        debug,
+        debugMetrics,
+        "main"
     );
+    pushMetric(debugMetrics, "draw:text", drawTextMainStart);
+
+    const drawNameStart = nowMs();
     await drawText(
         ctx,
         name_layout,
@@ -189,8 +281,13 @@ export async function render(
             y: name_y
         },
         tcolor,
-        debug
+        debug,
+        debugMetrics,
+        "name"
     );
+    pushMetric(debugMetrics, "draw:name", drawNameStart);
+
+    const drawIdStart = nowMs();
     await drawText(
         ctx,
         id_layout,
@@ -204,8 +301,13 @@ export async function render(
             y: id_y
         },
         "#8F8F8F",
-        debug
+        debug,
+        debugMetrics,
+        "id"
     );
+    pushMetric(debugMetrics, "draw:id", drawIdStart);
+
+    const drawCreditStart = nowMs();
     await drawText(
         ctx,
         nky_layout,
@@ -215,8 +317,16 @@ export async function render(
             y: HEIGHT - nky_layout.height
         },
         "#8F8F8F",
-        debug
+        debug,
+        debugMetrics,
+        "credit"
     );
+    pushMetric(debugMetrics, "draw:credit", drawCreditStart);
+
+    if (debugMetrics) {
+        debugMetrics.push({ label: "total", ms: nowMs() - renderStart });
+        drawDebugTimings(ctx, debugMetrics);
+    }
 
     return await canvas.toBuffer(format);
 }
@@ -270,8 +380,18 @@ async function drawText(
     fontFamilies: string[],
     offset: { x: number; y: number },
     color?: string,
-    debug = false
+    debug = false,
+    debugMetrics: DebugMetric[] | null = null,
+    metricLabel = "text"
 ) {
+    const drawTextStart = nowMs();
+    let lineLayoutMs = 0;
+    let styleAndFontMs = 0;
+    let textDrawMs = 0;
+    let emojiDrawMs = 0;
+    let decorationMs = 0;
+    let debugGuideMs = 0;
+
     const lines = layout.runs.map((r) => r.line);
     const uniqueLines = Array.from(new Set(lines));
     const lineSizes: { x: number; y: number; width: number; height: number }[] =
@@ -279,6 +399,7 @@ async function drawText(
     //debug時のみwidthは計算される
 
     for (const line of uniqueLines) {
+        const lineLayoutStart = nowMs();
         const lineRuns = layout.runs.filter((r) => r.line === line);
         const minX = Math.min(...lineRuns.map((r) => r.x));
         const maxX = debug
@@ -293,9 +414,13 @@ async function drawText(
             width: maxX - minX,
             height
         };
+        if (debug) {
+            lineLayoutMs += nowMs() - lineLayoutStart;
+        }
     }
 
     for (const positioned of layout.runs) {
+        const styleStart = debug ? nowMs() : 0;
         const run = positioned.run;
 
         const style = resolveStyle(run.style, {});
@@ -305,6 +430,9 @@ async function drawText(
             fontFamilies,
             positioned.fontSize
         ).toString();
+        if (debug) {
+            styleAndFontMs += nowMs() - styleStart;
+        }
 
         ctx.textBaseline = "alphabetic";
 
@@ -313,6 +441,7 @@ async function drawText(
         */
 
         if (style.code) {
+            const decoStart = debug ? nowMs() : 0;
             ctx.fillStyle = "#1e1e1e8e";
 
             ctx.fillRect(
@@ -324,6 +453,9 @@ async function drawText(
 
                 lineSizes[positioned.line].height
             );
+            if (debug) {
+                decorationMs += nowMs() - decoStart;
+            }
         }
 
         /*
@@ -331,6 +463,7 @@ async function drawText(
         */
 
         if (style.quote && positioned.x === lineSizes[positioned.line].x) {
+            const decoStart = debug ? nowMs() : 0;
             ctx.fillStyle = "#1e1e1e";
 
             ctx.fillRect(
@@ -340,6 +473,9 @@ async function drawText(
                 5,
                 lineSizes[positioned.line].height
             );
+            if (debug) {
+                decorationMs += nowMs() - decoStart;
+            }
         }
 
         /*
@@ -355,6 +491,7 @@ async function drawText(
             ctx.transform(1, 0, Math.tan((-15 * Math.PI) / 180), 1, 0, 0);
         }
         if (run.type === "emoji") {
+            const emojiStart = debug ? nowMs() : 0;
             const image = await getEmojiImage(run.emoji);
 
             if (image) {
@@ -371,7 +508,11 @@ async function drawText(
                     positioned.height
                 );
             }
+            if (debug) {
+                emojiDrawMs += nowMs() - emojiStart;
+            }
         } else {
+            const textStart = debug ? nowMs() : 0;
             ctx.fillStyle = style.color ?? color ?? "#000";
 
             if (style.bold) {
@@ -391,6 +532,9 @@ async function drawText(
                 style.italic ? 0 : positioned.x + offset.x,
                 style.italic ? 0 : positioned.y + offset.y
             );
+            if (debug) {
+                textDrawMs += nowMs() - textStart;
+            }
         }
         if (style.italic) {
             ctx.restore();
@@ -401,6 +545,7 @@ async function drawText(
         */
 
         if (style.spoiler) {
+            const decoStart = debug ? nowMs() : 0;
             ctx.fillStyle = "#1e1e1efb";
 
             ctx.fillRect(
@@ -412,6 +557,9 @@ async function drawText(
 
                 lineSizes[positioned.line].height
             );
+            if (debug) {
+                decorationMs += nowMs() - decoStart;
+            }
         }
 
         /*
@@ -419,6 +567,7 @@ async function drawText(
         */
 
         if (style.underline) {
+            const decoStart = debug ? nowMs() : 0;
             ctx.fillRect(
                 positioned.x + offset.x,
 
@@ -431,6 +580,9 @@ async function drawText(
 
                 5
             );
+            if (debug) {
+                decorationMs += nowMs() - decoStart;
+            }
         }
 
         /*
@@ -438,6 +590,7 @@ async function drawText(
         */
 
         if (style.strikethrough) {
+            const decoStart = debug ? nowMs() : 0;
             ctx.fillRect(
                 positioned.x + offset.x,
 
@@ -449,6 +602,9 @@ async function drawText(
 
                 5
             );
+            if (debug) {
+                decorationMs += nowMs() - decoStart;
+            }
         }
 
         /*
@@ -456,6 +612,7 @@ async function drawText(
         */
 
         if (debug) {
+            const debugGuideStart = nowMs();
             ctx.strokeStyle = "lightgreen";
             for (const line of uniqueLines) {
                 ctx.strokeRect(
@@ -494,7 +651,39 @@ async function drawText(
                 positioned.width,
                 0
             );
+            debugGuideMs += nowMs() - debugGuideStart;
         }
+    }
+
+    if (debugMetrics && debug) {
+        debugMetrics.push({
+            label: `drawText:${metricLabel}:lineLayout`,
+            ms: lineLayoutMs
+        });
+        debugMetrics.push({
+            label: `drawText:${metricLabel}:styleFont`,
+            ms: styleAndFontMs
+        });
+        debugMetrics.push({
+            label: `drawText:${metricLabel}:textDraw`,
+            ms: textDrawMs
+        });
+        debugMetrics.push({
+            label: `drawText:${metricLabel}:emojiDraw`,
+            ms: emojiDrawMs
+        });
+        debugMetrics.push({
+            label: `drawText:${metricLabel}:decor`,
+            ms: decorationMs
+        });
+        debugMetrics.push({
+            label: `drawText:${metricLabel}:debugGuide`,
+            ms: debugGuideMs
+        });
+        debugMetrics.push({
+            label: `drawText:${metricLabel}:total`,
+            ms: nowMs() - drawTextStart
+        });
     }
 }
 
